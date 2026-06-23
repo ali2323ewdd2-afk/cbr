@@ -241,7 +241,7 @@ model Lesson {
   subtitleUrl String?
   // VTT subtitle file URL
   createdAt   DateTime @default(now())
-  updatedAt   DateTime? @updatedAt
+  updatedAt   DateTime @updatedAt
 
   progress      LessonProgress[]
   videoProgress VideoProgress[]
@@ -276,7 +276,7 @@ model VideoProgress {
   durationSec Int      @default(0)
   completed   Boolean  @default(false)
   speed       Float    @default(1.0)
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime? @updatedAt
 
   @@unique([userId, lessonId])
   @@index([userId])
@@ -1287,7 +1287,7 @@ model TrafficSign {
   descriptionAr String?
   isPublished Boolean  @default(true)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime? @updatedAt
 
   @@index([category])
   @@index([isPublished])
