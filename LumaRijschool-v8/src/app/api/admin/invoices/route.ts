@@ -7,7 +7,7 @@ import { hasPermission } from '@/lib/rbac'
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const ok = await hasPermission(session.user.id, 'users.view')
+  const ok = session.user.role === 'ADMIN' || session.user.role === 'SUPPORT' || await hasPermission(session.user.id, 'invoices.view')
   if (!ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const invoices = await prisma.invoice.findMany({
     orderBy: { issuedAt: 'desc' },

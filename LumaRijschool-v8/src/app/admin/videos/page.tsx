@@ -19,8 +19,8 @@ export default function AdminVideosPage() {
         { key: 'title', label: 'Titel', required: true },
         { key: 'description', label: 'Beschrijving', type: 'textarea' },
         { key: 'youtubeUrl', label: 'Youtube URL' },
-        { key: 'mp4Url', label: 'MP4 URL' },
-        { key: 'thumbnailUrl', label: 'Cover URL' },
+        { key: 'mp4Url', label: 'MP4 URL / upload', type: 'file', uploadKind: 'video' },
+        { key: 'thumbnailUrl', label: 'Cover URL / upload', type: 'file', uploadKind: 'image' },
         { key: 'durationSec', label: 'Duur (seconden)', type: 'number', defaultValue: 0 },
         { key: 'isPublished', label: 'Gepubliceerd', type: 'boolean', defaultValue: false },
       ]}

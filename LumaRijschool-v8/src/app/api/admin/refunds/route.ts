@@ -7,6 +7,7 @@ import { hasPermission } from '@/lib/rbac'
 async function requirePermission(permission: string) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return null
+  if (session.user.role === 'ADMIN' || session.user.role === 'SUPPORT') return session
   const ok = await hasPermission(session.user.id, permission)
   if (!ok) return null
   return session

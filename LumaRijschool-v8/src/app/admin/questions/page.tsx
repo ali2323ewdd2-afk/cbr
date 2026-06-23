@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Plus, Trash2 } from 'lucide-react'
+import { Copy, Download, Loader2, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface QuestionOption {
@@ -145,6 +145,34 @@ export default function AdminQuestionsPage() {
     }
   }
 
+  async function duplicate(id: string) {
+    const res = await fetch('/api/admin/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'DUPLICATE', id }),
+    })
+    if (res.ok) {
+      toast.success('Vraag gedupliceerd')
+      await load()
+    } else {
+      toast.error('Dupliceren mislukt')
+    }
+  }
+
+  async function uploadImage(file: File) {
+    const body = new FormData()
+    body.set('file', file)
+    body.set('kind', 'image')
+    const res = await fetch('/api/admin/uploads', { method: 'POST', body })
+    const data = (await res.json()) as { media?: { url: string }; error?: string }
+    if (res.ok && data.media) {
+      setForm({ ...form, imageUrl: data.media.url })
+      toast.success('Afbeelding geupload')
+    } else {
+      toast.error(data.error ?? 'Upload mislukt')
+    }
+  }
+
   return (
     <AdminShell title="Vragenbeheer">
       <div className="space-y-5">
@@ -158,7 +186,13 @@ export default function AdminQuestionsPage() {
             <option value="MEDIUM">Medium</option>
             <option value="HARD">Hard</option>
           </select>
-          <Input value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="Afbeelding URL" className="rounded-xl" />
+          <div className="space-y-2">
+            <Input value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="Afbeelding URL" className="rounded-xl" />
+            <Input type="file" accept="image/*" className="rounded-xl" onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void uploadImage(file)
+            }} />
+          </div>
           <Textarea value={form.stem} onChange={(event) => setForm({ ...form, stem: event.target.value })} placeholder="Vraag" className="rounded-xl md:col-span-2" />
           <Textarea value={form.explanation} onChange={(event) => setForm({ ...form, explanation: event.target.value })} placeholder="Uitleg" className="rounded-xl md:col-span-2" />
           {form.options.map((option, index) => (
@@ -196,6 +230,7 @@ export default function AdminQuestionsPage() {
               <div className="flex gap-2">
                 <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoeken" className="rounded-xl" />
                 <Button onClick={() => void load()} className="rounded-xl bg-blue-gradient text-white">Zoek</Button>
+                <Button variant="outline" className="rounded-xl" onClick={() => window.open('/api/admin/questions?export=csv&pageSize=100', '_blank')}><Download className="h-4 w-4" /></Button>
                 <Button variant="ghost" className="rounded-xl text-[#EF4444]" onClick={() => void remove(selected)}><Trash2 className="h-4 w-4" /></Button>
               </div>
             </div>
@@ -231,6 +266,7 @@ export default function AdminQuestionsPage() {
                       <td className="py-3 text-right text-sm text-slate-600">{q._count.answers}× beantwoord</td>
                       <td className="py-3 text-right">
                         <Button size="sm" variant="outline" className="rounded-xl" onClick={() => edit(q)}>Bewerk</Button>
+                        <Button size="sm" variant="ghost" className="rounded-xl" onClick={() => void duplicate(q.id)}><Copy className="h-4 w-4" /></Button>
                         <Button size="sm" variant="ghost" className="rounded-xl text-[#EF4444]" onClick={() => void remove([q.id])}><Trash2 className="h-4 w-4" /></Button>
                       </td>
                     </tr>

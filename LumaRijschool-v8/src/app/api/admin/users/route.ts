@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { forbiddenResponse, parsePagination, requireAdminSession, serverErrorResponse } from '@/lib/admin-api'
+import { forbiddenResponse, parsePagination, readJson, requireAdminSession, serverErrorResponse } from '@/lib/admin-api'
+
+const createUserSchema = z.object({
+  name: z.string().trim().max(160).optional().nullable(),
+  email: z.string().email(),
+  phone: z.string().trim().max(40).optional().nullable(),
+  password: z.string().min(8).max(200),
+  role: z.enum(['STUDENT', 'SUPPORT', 'ADMIN']).default('STUDENT'),
+})
 
 export async function GET(req: Request) {
   const session = await requireAdminSession()
@@ -84,6 +94,34 @@ export async function GET(req: Request) {
       page,
       pageSize,
     })
+  } catch (error) {
+    return serverErrorResponse(error)
+  }
+}
+
+export async function POST(req: Request) {
+  const session = await requireAdminSession()
+  if (!session) return forbiddenResponse()
+
+  const parsed = await readJson(req, createUserSchema)
+  if (parsed.error) return parsed.error
+
+  try {
+    const passwordHash = await bcrypt.hash(parsed.data.password, 12)
+    const user = await prisma.user.create({
+      data: {
+        email: parsed.data.email.toLowerCase(),
+        name: parsed.data.name || null,
+        phone: parsed.data.phone || null,
+        passwordHash,
+        role: parsed.data.role,
+      },
+      select: { id: true, email: true, name: true, phone: true, role: true, createdAt: true },
+    })
+    await prisma.auditLog.create({
+      data: { actorId: session.user.id, action: 'USER_CREATED', entity: 'User', entityId: user.id },
+    })
+    return NextResponse.json({ user }, { status: 201 })
   } catch (error) {
     return serverErrorResponse(error)
   }

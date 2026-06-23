@@ -22,7 +22,12 @@ export default function AdminCertificatesPage() {
         { key: 'score', label: 'Score (0-1)', type: 'number', defaultValue: 0 },
         { key: 'lessonId', label: 'Lesson ID' },
         { key: 'examAttemptId', label: 'Exam attempt ID' },
-        { key: 'pdfUrl', label: 'PDF URL' },
+        { key: 'pdfUrl', label: 'PDF URL / upload', type: 'file', uploadKind: 'document' },
+        { key: 'action', label: 'Actie bij bewerken', type: 'select', defaultValue: 'UPDATE', options: [
+          { label: 'Update', value: 'UPDATE' },
+          { label: 'Reissue PDF', value: 'REISSUE' },
+          { label: 'Revoke', value: 'REVOKE' },
+        ] },
       ]}
       columns={[
         {
@@ -34,6 +39,7 @@ export default function AdminCertificatesPage() {
         },
         { label: 'Titel', render: (row) => <div className="font-semibold">{value(row, 'title')}</div> },
         { label: 'Nummer', render: (row) => value(row, 'certificateNumber') },
+        { label: 'Status', render: (row) => value(row, 'status') || 'ISSUED' },
         { label: 'PDF', render: (row) => value(row, 'pdfUrl') ? 'Beschikbaar' : 'Geen PDF' },
         { label: 'Uitgegeven', render: (row) => new Date(String(row.issuedAt)).toLocaleDateString('nl-NL') },
       ]}

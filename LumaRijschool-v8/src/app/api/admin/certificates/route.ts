@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { generateCertificatePdf } from '@/lib/certificate-pdf'
 import {
   badRequestResponse,
   forbiddenResponse,
@@ -24,7 +25,7 @@ const certificateSchema = z.object({
 
 const patchSchema = certificateSchema.partial().extend({
   id: z.string().min(1),
-  action: z.enum(['UPDATE', 'REISSUE']).default('UPDATE'),
+  action: z.enum(['UPDATE', 'REISSUE', 'REVOKE']).default('UPDATE'),
 })
 const deleteSchema = z.object({ id: z.string().min(1) })
 
@@ -80,6 +81,13 @@ export async function POST(req: Request) {
   if (parsed.error) return parsed.error
 
   try {
+    const certificateNumberValue = certificateNumber()
+    const pdfUrl = parsed.data.pdfUrl || await generateCertificatePdf({
+      certificateNumber: certificateNumberValue,
+      title: parsed.data.title,
+      body: parsed.data.body,
+      issuedAt: new Date(),
+    })
     const certificate = await prisma.certificate.create({
       data: {
         userId: parsed.data.userId,
@@ -89,8 +97,8 @@ export async function POST(req: Request) {
         courseId: parsed.data.courseId || null,
         lessonId: parsed.data.lessonId || null,
         examAttemptId: parsed.data.examAttemptId || null,
-        pdfUrl: parsed.data.pdfUrl || null,
-        certificateNumber: certificateNumber(),
+        pdfUrl,
+        certificateNumber: certificateNumberValue,
       },
     })
     return NextResponse.json({ certificate }, { status: 201 })
@@ -108,6 +116,22 @@ export async function PATCH(req: Request) {
 
   try {
     const { id, action, ...data } = parsed.data
+    if (action === 'REVOKE') {
+      const certificate = await prisma.certificate.update({
+        where: { id },
+        data: { status: 'REVOKED', revokedAt: new Date() },
+      })
+      return NextResponse.json({ certificate })
+    }
+    const certificateNumberValue = action === 'REISSUE' ? certificateNumber() : undefined
+    const generatedPdfUrl = action === 'REISSUE' && data.title && data.body && certificateNumberValue
+      ? await generateCertificatePdf({
+          certificateNumber: certificateNumberValue,
+          title: data.title,
+          body: data.body,
+          issuedAt: new Date(),
+        })
+      : undefined
     const certificate = await prisma.certificate.update({
       where: { id },
       data: {
@@ -119,7 +143,7 @@ export async function PATCH(req: Request) {
         ...(data.lessonId !== undefined ? { lessonId: data.lessonId || null } : {}),
         ...(data.examAttemptId !== undefined ? { examAttemptId: data.examAttemptId || null } : {}),
         ...(data.pdfUrl !== undefined ? { pdfUrl: data.pdfUrl || null } : {}),
-        ...(action === 'REISSUE' ? { issuedAt: new Date(), certificateNumber: certificateNumber() } : {}),
+        ...(action === 'REISSUE' ? { issuedAt: new Date(), certificateNumber: certificateNumberValue, status: 'ISSUED', revokedAt: null, ...(generatedPdfUrl ? { pdfUrl: generatedPdfUrl } : {}) } : {}),
       },
     })
     return NextResponse.json({ certificate })

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { AdminCrudPage, StatusBadge, type AdminRecord } from '@/components/luma/admin-crud-page'
 
 function value(row: AdminRecord, key: string) {
@@ -33,7 +34,7 @@ export default function AdminExamsPage() {
       ]}
       transformSubmit={(values) => ({ ...values, tags: [] })}
       columns={[
-        { label: 'Examen', render: (row) => <div className="font-semibold">{value(row, 'title')}</div> },
+        { label: 'Examen', render: (row) => <Link href={`/admin/exams/${row.id}`} className="font-semibold text-[#2563EB] hover:underline">{value(row, 'title')}</Link> },
         { label: 'Type', render: (row) => value(row, 'type') },
         { label: 'Vragen', render: (row) => value(row, 'questionCount') },
         { label: 'Tijd', render: (row) => `${Math.round(Number(row.durationSec ?? 0) / 60)} min` },

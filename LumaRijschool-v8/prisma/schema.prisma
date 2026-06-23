@@ -63,6 +63,7 @@ model User {
   challenges      UserChallenge[]
   supportTickets  SupportTicket[]  @relation("TicketAuthor")
   ticketReplies   SupportTicketReply[]
+  supportAttachments SupportTicketAttachment[]
   bookmarks       Bookmark[]
   videoProgress   VideoProgress[]
   guest           Guest?
@@ -714,6 +715,7 @@ model Plan {
   isPopular   Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime? @updatedAt
 
   subscriptions Subscription[]
   payments      Payment[]
@@ -900,6 +902,7 @@ model SupportTicket {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   replies   SupportTicketReply[]
+  attachments SupportTicketAttachment[]
 }
 
 model SupportTicketReply {
@@ -911,8 +914,28 @@ model SupportTicketReply {
   body      String
   isStaff   Boolean  @default(false)
   createdAt DateTime @default(now())
+  attachments SupportTicketAttachment[]
 
   @@index([ticketId])
+}
+
+model SupportTicketAttachment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  replyId   String?
+  reply     SupportTicketReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fileName  String
+  fileUrl   String
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([replyId])
+  @@index([userId])
 }
 
 // ════════════════════════════════════════════════
@@ -926,9 +949,11 @@ model Announcement {
   type      String   @default("INFO") // INFO | WARNING | MAINTENANCE | FEATURE
   audience  String   @default("ALL") // ALL | STUDENTS | ADMINS
   isActive  Boolean  @default(true)
+  isPinned  Boolean  @default(false)
   startsAt  DateTime @default(now())
   endsAt    DateTime?
   createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 // ════════════════════════════════════════════════
@@ -970,6 +995,9 @@ model BackupRecord {
   type      String   // DAILY | WEEKLY | MONTHLY | MANUAL
   status    String   @default("SUCCESS") // SUCCESS | FAILED
   path      String
+  checksum  String?
+  verifiedAt DateTime?
+  restoredAt DateTime?
   createdAt DateTime @default(now())
 
   @@index([createdAt])
@@ -1035,6 +1063,8 @@ model Certificate {
   title        String
   body         String
   score        Float?
+  status       String   @default("ISSUED") // ISSUED | REVOKED
+  revokedAt    DateTime?
   issuedAt     DateTime @default(now())
   certificateNumber String @unique
   pdfUrl       String?
@@ -1324,6 +1354,20 @@ model EmailLog {
   @@index([audience])
   @@index([userId])
   @@index([createdAt])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  subject     String
+  html        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 model AppVersion {

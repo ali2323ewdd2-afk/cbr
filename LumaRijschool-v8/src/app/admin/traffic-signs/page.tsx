@@ -27,7 +27,7 @@ export default function AdminTrafficSignsPage() {
           { label: 'Mandatory', value: 'MANDATORY' },
           { label: 'Informational', value: 'INFORMATIONAL' },
         ] },
-        { key: 'imageUrl', label: 'Afbeelding URL', required: true },
+        { key: 'imageUrl', label: 'Afbeelding URL / upload', type: 'file', uploadKind: 'image', required: true },
         { key: 'description', label: 'Uitleg', type: 'textarea', required: true },
         { key: 'isPublished', label: 'Gepubliceerd', type: 'boolean', defaultValue: true },
       ]}

@@ -15,7 +15,8 @@ export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title: '', body: '', type: 'INFO', audience: 'ALL' })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({ title: '', body: '', type: 'INFO', audience: 'ALL', startsAt: '', endsAt: '', isPinned: false, isActive: true })
 
   useEffect(() => {
     fetch('/api/admin/announcements').then((r) => r.json()).then((d) => {
@@ -24,18 +25,34 @@ export default function AdminAnnouncementsPage() {
     })
   }, [])
 
-  async function create() {
+  async function save() {
     if (!form.title || !form.body) return toast.error('Vul titel en bericht in')
-    const res = await fetch('/api/admin/announcements', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(editingId ? `/api/admin/announcements/${editingId}` : '/api/admin/announcements', {
+      method: editingId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
     if (res.ok) {
-      toast.success('Announcement gemaakt!')
+      toast.success(editingId ? 'Announcement bijgewerkt!' : 'Announcement gemaakt!')
       setShowForm(false)
-      setForm({ title: '', body: '', type: 'INFO', audience: 'ALL' })
+      setEditingId(null)
+      setForm({ title: '', body: '', type: 'INFO', audience: 'ALL', startsAt: '', endsAt: '', isPinned: false, isActive: true })
       fetch('/api/admin/announcements').then((r) => r.json()).then((d) => setItems(d.announcements || []))
     }
+  }
+
+  function edit(a: any) {
+    setEditingId(a.id)
+    setForm({
+      title: a.title,
+      body: a.body,
+      type: a.type,
+      audience: a.audience,
+      startsAt: a.startsAt ? new Date(a.startsAt).toISOString().slice(0, 16) : '',
+      endsAt: a.endsAt ? new Date(a.endsAt).toISOString().slice(0, 16) : '',
+      isPinned: Boolean(a.isPinned),
+      isActive: Boolean(a.isActive),
+    })
+    setShowForm(true)
   }
 
   async function remove(id: string) {
@@ -85,7 +102,13 @@ export default function AdminAnnouncementsPage() {
               </select>
             </div>
           </div>
-          <Button onClick={create} className="bg-blue-gradient text-white rounded-xl h-11">Aanmaken</Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Input type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} className="rounded-xl" />
+            <Input type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} className="rounded-xl" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={form.isPinned} onChange={(e) => setForm({ ...form, isPinned: e.target.checked })} /> Pin announcement</label>
+          <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} /> Actief</label>
+          <Button onClick={save} className="bg-blue-gradient text-white rounded-xl h-11">{editingId ? 'Opslaan' : 'Aanmaken'}</Button>
         </Card>
       )}
 
@@ -101,11 +124,14 @@ export default function AdminAnnouncementsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <Badge className={`border-0 text-xs ${a.type === 'WARNING' ? 'bg-[#FFB020]/20 text-[#B45309]' : a.type === 'MAINTENANCE' ? 'bg-[#FF6B6B]/20 text-[#EF4444]' : a.type === 'FEATURE' ? 'bg-[#7C5CFC]/20 text-[#7C5CFC]' : 'bg-[#EFF6FF] text-[#2563EB]'}`}>{a.type}</Badge>
                     <Badge className="bg-[#F4F7FB] text-slate-500 hover:bg-[#F4F7FB] border-0 text-xs">{a.audience}</Badge>
+                    {a.isPinned && <Badge className="bg-[#ECFDF3] text-[#16A34A] hover:bg-[#ECFDF3] border-0 text-xs">Pinned</Badge>}
+                    {!a.isActive && <Badge className="bg-[#FEF2F2] text-[#EF4444] hover:bg-[#FEF2F2] border-0 text-xs">Inactive</Badge>}
                   </div>
                   <div className="font-semibold text-sm text-[#0B1B3B]">{a.title}</div>
                   <div className="text-xs text-slate-600 mt-1">{a.body}</div>
                   <div className="text-xs text-slate-400 mt-1">{new Date(a.createdAt).toLocaleString('nl-NL')}</div>
                 </div>
+                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => edit(a)}>Bewerk</Button>
                 <button onClick={() => remove(a.id)} className="text-slate-400 hover:text-[#EF4444]"><X className="w-4 h-4" /></button>
               </div>
             ))}

@@ -55,6 +55,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // support powers
     'users.view', 'users.extend.sub', 'users.ban', 'users.unban',
     'support.view', 'support.reply', 'support.resolve',
+    'payments.view', 'payments.refund', 'invoices.view',
     'announcements.create', 'announcements.delete',
     'audit.view',
   ],

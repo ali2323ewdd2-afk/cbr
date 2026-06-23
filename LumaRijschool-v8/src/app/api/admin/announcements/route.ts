@@ -14,8 +14,7 @@ export async function GET() {
   const session = await requireAdmin()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const items = await prisma.announcement.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
   })
   return NextResponse.json({ announcements: items })
 }
@@ -23,9 +22,9 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await requireAdmin()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { title, body, type, audience, startsAt, endsAt } = await req.json()
+  const { title, body, type, audience, startsAt, endsAt, isPinned } = await req.json()
   const announcement = await prisma.announcement.create({
-    data: { title, body, type: type || 'INFO', audience: audience || 'ALL', startsAt: startsAt ? new Date(startsAt) : new Date(), endsAt: endsAt ? new Date(endsAt) : null },
+    data: { title, body, type: type || 'INFO', audience: audience || 'ALL', isPinned: Boolean(isPinned), startsAt: startsAt ? new Date(startsAt) : new Date(), endsAt: endsAt ? new Date(endsAt) : null },
   })
   // Push to all clients in real-time
   await publish('system:announcement', announcement)

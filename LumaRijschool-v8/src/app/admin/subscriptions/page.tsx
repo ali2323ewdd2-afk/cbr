@@ -18,8 +18,14 @@ interface SubscriptionRow {
   plan: { name: string }
 }
 
+interface PlanOption {
+  id: string
+  name: string
+}
+
 export default function AdminSubscriptionsPage() {
   const [rows, setRows] = useState<SubscriptionRow[]>([])
+  const [plans, setPlans] = useState<PlanOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -30,9 +36,10 @@ export default function AdminSubscriptionsPage() {
     setError(null)
     try {
       const res = await fetch(`/api/admin/subscriptions?search=${encodeURIComponent(search)}&pageSize=50`)
-      const data = (await res.json()) as { subscriptions?: SubscriptionRow[]; error?: string }
+      const data = (await res.json()) as { subscriptions?: SubscriptionRow[]; plans?: PlanOption[]; error?: string }
       if (!res.ok) throw new Error(data.error ?? 'Laden mislukt')
       setRows(data.subscriptions ?? [])
+      setPlans(data.plans ?? [])
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Laden mislukt')
     } finally {
@@ -92,7 +99,10 @@ export default function AdminSubscriptionsPage() {
           <div className="mb-4 font-display text-lg font-bold text-[#0B1B3B]">Gratis abonnement</div>
           <div className="grid gap-3 md:grid-cols-4">
             <Input value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} placeholder="User ID" className="rounded-xl" />
-            <Input value={form.planId} onChange={(event) => setForm({ ...form, planId: event.target.value })} placeholder="Plan ID" className="rounded-xl" />
+            <select value={form.planId} onChange={(event) => setForm({ ...form, planId: event.target.value })} className="rounded-xl border border-input bg-background px-3 py-2 text-sm">
+              <option value="">Selecteer plan</option>
+              {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
+            </select>
             <Input type="number" value={form.days} onChange={(event) => setForm({ ...form, days: Number(event.target.value) })} className="rounded-xl" />
             <Button onClick={() => void createFree()} className="rounded-xl bg-blue-gradient text-white"><Plus className="mr-2 h-4 w-4" />Toevoegen</Button>
           </div>

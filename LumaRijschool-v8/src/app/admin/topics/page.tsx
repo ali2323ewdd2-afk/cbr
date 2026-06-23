@@ -21,7 +21,7 @@ export default function AdminTopicsPage() {
         { key: 'nameEn', label: 'Naam EN' },
         { key: 'color', label: 'Kleur', defaultValue: '#2563EB' },
         { key: 'iconKey', label: 'Icon' },
-        { key: 'imageUrl', label: 'Afbeelding URL' },
+        { key: 'imageUrl', label: 'Afbeelding URL / upload', type: 'file', uploadKind: 'image' },
         { key: 'order', label: 'Volgorde', type: 'number', defaultValue: 0 },
         { key: 'description', label: 'Beschrijving', type: 'textarea' },
         { key: 'isPublished', label: 'Gepubliceerd', type: 'boolean', defaultValue: true },

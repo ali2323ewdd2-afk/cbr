@@ -38,8 +38,12 @@ const bulkQuestionSchema = z.object({
   mode: z.literal('bulk'),
   questions: z.array(questionSchema).min(1).max(200),
 })
+const duplicateSchema = z.object({
+  action: z.literal('DUPLICATE'),
+  id: z.string().min(1),
+})
 
-const createSchema = z.union([questionSchema, bulkQuestionSchema])
+const createSchema = z.union([questionSchema, bulkQuestionSchema, duplicateSchema])
 const patchSchema = questionSchema.partial().extend({
   id: z.string().min(1),
   options: z.array(optionSchema).length(4).optional(),
@@ -57,6 +61,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url)
     const { page, pageSize, skip } = parsePagination(url, { pageSize: 50, maxPageSize: 100 })
     const search = url.searchParams.get('search')?.trim()
+    const exportType = url.searchParams.get('export')
     const topicId = url.searchParams.get('topicId')?.trim()
     const difficulty = url.searchParams.get('difficulty')?.trim()
     const published = url.searchParams.get('published')
@@ -93,6 +98,30 @@ export async function GET(req: Request) {
       prisma.lesson.findMany({ orderBy: [{ order: 'asc' }, { title: 'asc' }], select: { id: true, title: true } }),
     ])
 
+    if (exportType === 'json') {
+      return NextResponse.json({ questions })
+    }
+    if (exportType === 'csv') {
+      const rows = [
+        ['id', 'topic', 'difficulty', 'stem', 'explanation', 'isPublished'],
+        ...questions.map((question) => [
+          question.id,
+          question.topic.name,
+          question.difficulty,
+          question.stem,
+          question.explanation,
+          String(question.isPublished),
+        ]),
+      ]
+      const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+      return new NextResponse(csv, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="questions.csv"',
+        },
+      })
+    }
+
     return NextResponse.json({ questions, topics, lessons, total, page, pageSize })
   } catch (error) {
     return serverErrorResponse(error)
@@ -107,6 +136,47 @@ export async function POST(req: Request) {
   if (parsed.error) return parsed.error
 
   try {
+    if ('action' in parsed.data) {
+      const source = await prisma.question.findUnique({
+        where: { id: parsed.data.id },
+        include: { options: true },
+      })
+      if (!source) return badRequestResponse('Question not found')
+      const question = await prisma.question.create({
+        data: {
+          topicId: source.topicId,
+          lessonId: source.lessonId,
+          type: source.type,
+          difficulty: source.difficulty,
+          stem: `${source.stem} (copy)`,
+          scenarioText: source.scenarioText,
+          imageUrl: source.imageUrl,
+          videoUrl: source.videoUrl,
+          hotspotZones: source.hotspotZones,
+          dragDropData: source.dragDropData,
+          caseStudyText: source.caseStudyText,
+          explanation: source.explanation,
+          aiExplanation: source.aiExplanation,
+          isFree: source.isFree,
+          isPublished: false,
+          tags: source.tags,
+          options: {
+            create: source.options.map((option) => ({
+              key: option.key,
+              text: option.text,
+              isCorrect: option.isCorrect,
+              order: option.order,
+              hotspotX: option.hotspotX,
+              hotspotY: option.hotspotY,
+              slotId: option.slotId,
+            })),
+          },
+        },
+        include: { options: true, topic: true },
+      })
+      return NextResponse.json({ question }, { status: 201 })
+    }
+
     if ('mode' in parsed.data) {
       const created = await prisma.$transaction(
         parsed.data.questions.map((question) =>

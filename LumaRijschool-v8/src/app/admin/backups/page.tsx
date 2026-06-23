@@ -12,16 +12,57 @@ export default function AdminBackupsPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  async function load() {
+    setLoading(true)
     fetch('/api/admin/backups').then((r) => r.json()).then((d) => {
       setData(d)
       setLoading(false)
     })
+  }
+
+  useEffect(() => {
+    void load()
   }, [])
 
   async function triggerBackup() {
     const res = await fetch('/api/admin/backups', { method: 'POST' })
-    if (res.ok) toast.success('Backup ingepland')
+    if (res.ok) {
+      toast.success('Backup aangemaakt')
+      await load()
+    } else {
+      toast.error('Backup mislukt')
+    }
+  }
+
+  async function verify(filename: string) {
+    const res = await fetch('/api/admin/backups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'VERIFY', filename }),
+    })
+    if (res.ok) {
+      toast.success('Backup geverifieerd')
+      await load()
+    } else {
+      toast.error('Verificatie mislukt')
+    }
+  }
+
+  async function restore(filename: string) {
+    const confirmation = window.prompt(`Type RESTORE om ${filename} terug te zetten`)
+    if (confirmation !== 'RESTORE') return
+    const res = await fetch('/api/admin/backups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'RESTORE', filename, confirmation }),
+    })
+    const body = await res.json()
+    if (res.ok && body.ok) {
+      toast.success('Backup teruggezet')
+      await load()
+    } else {
+      toast.error(body.message ?? body.error ?? 'Restore mislukt')
+    }
   }
 
   return (
@@ -49,6 +90,11 @@ export default function AdminBackupsPage() {
                   <div className="text-xs text-slate-500">{(b.sizeBytes / 1024 / 1024).toFixed(2)} MB · {new Date(b.createdAt).toLocaleString('nl-NL')}</div>
                 </div>
                 <Badge className={`border-0 text-xs ${b.type === 'DAILY' ? 'bg-[#EFF6FF] text-[#2563EB]' : b.type === 'WEEKLY' ? 'bg-[#ECFDF3] text-[#16A34A]' : b.type === 'MONTHLY' ? 'bg-[#F3EEFF] text-[#7C5CFC]' : 'bg-[#FFB020]/20 text-[#B45309]'}`}>{b.type}</Badge>
+                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => window.open(`/api/admin/backups?download=${encodeURIComponent(b.filename)}`, '_blank')}>
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => void verify(b.filename)}>Verify</Button>
+                <Button variant="ghost" size="sm" className="rounded-xl text-[#EF4444]" onClick={() => void restore(b.filename)}>Restore</Button>
               </div>
             ))}
             {(!data?.backups || data.backups.length === 0) && (

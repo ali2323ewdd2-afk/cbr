@@ -6,6 +6,9 @@ import { prisma } from '@/lib/prisma'
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPPORT') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const url = new URL(req.url)
   const action = url.searchParams.get('action') || ''

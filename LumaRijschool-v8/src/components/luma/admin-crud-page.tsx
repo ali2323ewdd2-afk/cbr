@@ -18,11 +18,12 @@ type FieldValue = string | number | boolean
 export interface AdminField {
   key: string
   label: string
-  type?: 'text' | 'number' | 'textarea' | 'boolean' | 'select'
+  type?: 'text' | 'number' | 'textarea' | 'boolean' | 'select' | 'file'
   required?: boolean
   placeholder?: string
   options?: { label: string; value: string }[]
   defaultValue?: FieldValue
+  uploadKind?: 'image' | 'video' | 'document'
 }
 
 export interface AdminColumn {
@@ -300,6 +301,9 @@ function FieldInput({
       </select>
     )
   }
+  if (field.type === 'file') {
+    return <FileField field={field} value={String(value ?? '')} onChange={onChange} />
+  }
   return (
     <Input
       type={field.type === 'number' ? 'number' : 'text'}
@@ -308,6 +312,53 @@ function FieldInput({
       placeholder={field.placeholder}
       className="mt-1 rounded-xl"
     />
+  )
+}
+
+function FileField({
+  field,
+  value,
+  onChange,
+}: {
+  field: AdminField
+  value: string
+  onChange: (value: FieldValue) => void
+}) {
+  const [uploading, setUploading] = useState(false)
+
+  async function upload(file: File) {
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.set('file', file)
+      body.set('kind', field.uploadKind ?? 'image')
+      const res = await fetch('/api/admin/uploads', { method: 'POST', body })
+      const data = (await res.json()) as { media?: { url: string }; error?: string }
+      if (!res.ok || !data.media) throw new Error(data.error ?? 'Upload mislukt')
+      onChange(data.media.url)
+      toast.success('Bestand geupload')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Upload mislukt')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mt-1 space-y-2">
+      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={field.placeholder ?? 'URL'} className="rounded-xl" />
+      <Input
+        type="file"
+        disabled={uploading}
+        accept={field.uploadKind === 'video' ? 'video/*' : field.uploadKind === 'document' ? '.pdf,text/plain,image/*' : 'image/*'}
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) void upload(file)
+        }}
+        className="rounded-xl"
+      />
+      {uploading ? <div className="text-xs text-slate-500">Uploaden...</div> : null}
+    </div>
   )
 }
 

@@ -37,6 +37,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [actionUser, setActionUser] = useState<UserRow | null>(null)
   const [profile, setProfile] = useState({ name: '', email: '', phone: '', password: '' })
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', role: 'STUDENT' })
   const pageSize = 15
 
   async function loadUsers(cancelled = false) {
@@ -119,8 +120,43 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function createUser() {
+    if (!newUser.email || !newUser.password) {
+      toast.error('Email en wachtwoord zijn verplicht')
+      return
+    }
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser),
+    })
+    if (res.ok) {
+      toast.success('Gebruiker aangemaakt')
+      setNewUser({ name: '', email: '', phone: '', password: '', role: 'STUDENT' })
+      await loadUsers()
+    } else {
+      const body = (await res.json()) as { error?: string }
+      toast.error(body.error ?? 'Aanmaken mislukt')
+    }
+  }
+
   return (
     <AdminShell title="Gebruikersbeheer">
+      <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-4 mb-5">
+        <div className="font-display font-bold text-lg text-[#0B1B3B] mb-3">Nieuwe gebruiker</div>
+        <div className="grid gap-3 md:grid-cols-6">
+          <Input value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} placeholder="Naam" className="rounded-xl" />
+          <Input value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="rounded-xl" />
+          <Input value={newUser.phone} onChange={(event) => setNewUser({ ...newUser, phone: event.target.value })} placeholder="Telefoon" className="rounded-xl" />
+          <Input value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} placeholder="Wachtwoord" type="password" className="rounded-xl" />
+          <select value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value })} className="rounded-xl border border-input bg-background px-3 py-2 text-sm">
+            <option value="STUDENT">Student</option>
+            <option value="SUPPORT">Support</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          <Button onClick={() => void createUser()} className="rounded-xl bg-blue-gradient text-white">Aanmaken</Button>
+        </div>
+      </Card>
       {/* Filters */}
       <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-4 mb-5">
         <div className="flex flex-col md:flex-row gap-3">
