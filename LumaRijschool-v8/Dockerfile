@@ -50,9 +50,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Install runtime deps: openssl (Prisma), curl (healthcheck), netcat-openbsd (entrypoint wait)
+# Install runtime deps: openssl (Prisma), curl (healthcheck), netcat-openbsd (entrypoint wait),
+# postgresql-client (pg_dump/pg_restore/psql for admin backup workflows)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl curl netcat-openbsd ca-certificates \
+    openssl curl netcat-openbsd ca-certificates postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy standalone build output

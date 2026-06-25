@@ -9,13 +9,22 @@ import { Loader2, Activity, Database, Cpu, HardDrive, Zap, AlertCircle } from 'l
 export default function AdminMonitoringPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchMetrics = () => {
-      fetch('/api/monitoring').then((r) => r.json()).then((d) => {
+      fetch('/api/monitoring').then(async (r) => {
+        const d = await r.json()
+        if (!r.ok || typeof d.uptime_seconds !== 'number' || !d.database || !d.redis || !d.memory) throw new Error(d.error || 'Monitoring laden mislukt')
+        return d
+      }).then((d) => {
         setData(d)
         setLoading(false)
-      }).catch(() => setLoading(false))
+      }).catch((err) => {
+        setError(err instanceof Error ? err.message : 'Monitoring laden mislukt')
+        setData(null)
+        setLoading(false)
+      })
     }
     fetchMetrics()
     const interval = setInterval(fetchMetrics, 5000) // auto-refresh every 5s
@@ -23,7 +32,7 @@ export default function AdminMonitoringPage() {
   }, [])
 
   if (loading) return <AdminShell title="Monitoring"><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" /></div></AdminShell>
-  if (!data) return <AdminShell title="Monitoring"><div className="text-center py-20 text-slate-500">Monitoring data niet beschikbaar</div></AdminShell>
+  if (!data) return <AdminShell title="Monitoring"><div className="rounded-2xl bg-[#FEF2F2] p-4 text-sm text-[#EF4444]">{error ?? 'Monitoring data niet beschikbaar'}</div></AdminShell>
 
   const kpis = [
     { label: 'Uptime', value: `${Math.floor(data.uptime_seconds / 3600)}u ${Math.floor((data.uptime_seconds % 3600) / 60)}m`, icon: Activity, color: '#1FB871' },

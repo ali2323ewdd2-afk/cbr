@@ -19,36 +19,36 @@ import {
 const nav = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Gebruikers', icon: Users },
-  { href: '/admin/roles', label: 'Rollen', icon: Shield },
-  { href: '/admin/lessons', label: 'Lessen', icon: FileQuestion },
-  { href: '/admin/exams', label: 'Examens', icon: FileQuestion },
-  { href: '/admin/questions', label: 'Vragen', icon: FileQuestion },
-  { href: '/admin/topics', label: 'Topics', icon: Tag },
-  { href: '/admin/traffic-signs', label: 'Verkeersborden', icon: Activity },
+  { href: '/admin/roles', label: 'Rollen', icon: Shield, adminOnly: true },
+  { href: '/admin/lessons', label: 'Lessen', icon: FileQuestion, adminOnly: true },
+  { href: '/admin/exams', label: 'Examens', icon: FileQuestion, adminOnly: true },
+  { href: '/admin/questions', label: 'Vragen', icon: FileQuestion, adminOnly: true },
+  { href: '/admin/topics', label: 'Topics', icon: Tag, adminOnly: true },
+  { href: '/admin/traffic-signs', label: 'Verkeersborden', icon: Activity, adminOnly: true },
   { href: '/admin/guests', label: 'Gasten', icon: Users },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/ai-usage', label: 'AI Usage', icon: Server },
-  { href: '/admin/subscriptions', label: 'Abonnementen', icon: CreditCard },
-  { href: '/admin/plans', label: 'Plans', icon: Tag },
-  { href: '/admin/payments', label: 'Payments', icon: CreditCard },
-  { href: '/admin/results', label: 'Resultaten', icon: BarChart3 },
-  { href: '/admin/videos', label: 'Videos', icon: Server },
-  { href: '/admin/video-analytics', label: 'Video Analytics', icon: BarChart3 },
-  { href: '/admin/certificates', label: 'Certificaten', icon: Shield },
-  { href: '/admin/emails', label: 'Emails', icon: MessageSquare },
-  { href: '/admin/email-templates', label: 'Email Templates', icon: MessageSquare },
-  { href: '/admin/notifications', label: 'Notificaties', icon: Bell },
-  { href: '/admin/reviews', label: 'Reviews', icon: Tag },
-  { href: '/admin/invoices', label: 'Facturen', icon: CreditCard },
-  { href: '/admin/refunds', label: 'Terugbetalingen', icon: RotateCcw },
-  { href: '/admin/coupons', label: 'Coupons', icon: Tag },
+  { href: '/admin/subscriptions', label: 'Abonnementen', icon: CreditCard, adminOnly: true },
+  { href: '/admin/plans', label: 'Plans', icon: Tag, adminOnly: true },
+  { href: '/admin/payments', label: 'Payments', icon: CreditCard, adminOnly: true },
+  { href: '/admin/results', label: 'Resultaten', icon: BarChart3, adminOnly: true },
+  { href: '/admin/videos', label: 'Videos', icon: Server, adminOnly: true },
+  { href: '/admin/video-analytics', label: 'Video Analytics', icon: BarChart3, adminOnly: true },
+  { href: '/admin/certificates', label: 'Certificaten', icon: Shield, adminOnly: true },
+  { href: '/admin/emails', label: 'Emails', icon: MessageSquare, adminOnly: true },
+  { href: '/admin/email-templates', label: 'Email Templates', icon: MessageSquare, adminOnly: true },
+  { href: '/admin/notifications', label: 'Notificaties', icon: Bell, adminOnly: true },
+  { href: '/admin/reviews', label: 'Reviews', icon: Tag, adminOnly: true },
+  { href: '/admin/invoices', label: 'Facturen', icon: CreditCard, adminOnly: true },
+  { href: '/admin/refunds', label: 'Terugbetalingen', icon: RotateCcw, adminOnly: true },
+  { href: '/admin/coupons', label: 'Coupons', icon: Tag, adminOnly: true },
   { href: '/admin/support', label: 'Support', icon: MessageSquare },
   { href: '/admin/announcements', label: 'Announcements', icon: Bell },
-  { href: '/admin/backups', label: 'Backups', icon: Database },
-  { href: '/admin/monitoring', label: 'Monitoring', icon: Activity },
-  { href: '/admin/security', label: 'Security', icon: Shield },
+  { href: '/admin/backups', label: 'Backups', icon: Database, adminOnly: true },
+  { href: '/admin/monitoring', label: 'Monitoring', icon: Activity, adminOnly: true },
+  { href: '/admin/security', label: 'Security', icon: Shield, adminOnly: true },
   { href: '/admin/audit', label: 'Audit Log', icon: Shield },
-  { href: '/admin/settings', label: 'Instellingen', icon: Settings },
+  { href: '/admin/settings', label: 'Instellingen', icon: Settings, adminOnly: true },
 ]
 
 export function AdminShell({ children, title }: { children: React.ReactNode; title?: string }) {
@@ -70,7 +70,7 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
       </Link>
 
       <nav className="flex-1 space-y-1">
-        {nav.map((n) => {
+        {nav.filter((n) => !n.adminOnly || session?.user?.role === 'ADMIN').map((n) => {
           const active = pathname === n.href || pathname.startsWith(`${n.href}/`)
           return (
             <Link

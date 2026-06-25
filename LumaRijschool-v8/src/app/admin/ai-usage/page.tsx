@@ -10,16 +10,24 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianG
 export default function AdminAiUsagePage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/ai-usage').then((r) => r.json()).then((d) => {
+    fetch('/api/admin/ai-usage').then(async (r) => {
+      const d = await r.json()
+      if (!r.ok || typeof d.totalSessions !== 'number') throw new Error(d.error || 'AI usage laden mislukt')
+      return d
+    }).then((d) => {
       setData(d)
+      setLoading(false)
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : 'AI usage laden mislukt')
       setLoading(false)
     })
   }, [])
 
   if (loading) return <AdminShell title="AI Usage"><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" /></div></AdminShell>
-  if (!data) return null
+  if (!data) return <AdminShell title="AI Usage"><div className="rounded-2xl bg-[#FEF2F2] p-4 text-sm text-[#EF4444]">{error ?? 'AI usage data niet beschikbaar'}</div></AdminShell>
 
   const kpis = [
     { label: 'Totaal sessies', value: data.totalSessions, icon: Bot, color: '#7C5CFC' },

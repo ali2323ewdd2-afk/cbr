@@ -45,8 +45,8 @@ export default function AdminGuestsPage() {
               </thead>
               <tbody>
                 {guests.map((g) => {
-                  const lessons = typeof g.lessonsViewed === 'string' ? JSON.parse(g.lessonsViewed || '[]').length : g.lessonsViewed?.length || 0
-                  const exams = typeof g.examsStarted === 'string' ? JSON.parse(g.examsStarted || '[]').length : g.examsStarted?.length || 0
+                  const lessons = safeJsonLength(g.lessonsViewed)
+                  const exams = safeJsonLength(g.examsStarted)
                   return (
                     <tr key={g.id} className="border-b border-[#E4E7EE]/50 last:border-0 hover:bg-[#F4F7FB]">
                       <td className="py-3 text-sm font-mono text-slate-700">{g.ip}</td>
@@ -76,4 +76,15 @@ export default function AdminGuestsPage() {
       </Card>
     </AdminShell>
   )
+}
+
+function safeJsonLength(value: unknown) {
+  if (Array.isArray(value)) return value.length
+  if (typeof value !== 'string') return 0
+  try {
+    const parsed = JSON.parse(value || '[]')
+    return Array.isArray(parsed) ? parsed.length : 0
+  } catch {
+    return 0
+  }
 }

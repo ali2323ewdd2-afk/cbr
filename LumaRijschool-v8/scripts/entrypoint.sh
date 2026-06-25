@@ -48,14 +48,18 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-# ─── 3. Run Prisma schema push ──────────────────────────
-echo "[$(date)] [3/8] Running Prisma schema push..."
-npx prisma db push --accept-data-loss 2>&1 || {
-  echo "  ⚠️ db:push failed, retrying in 5s..."
-  sleep 5
-  npx prisma db push --accept-data-loss 2>&1 || echo "  ⚠️ Schema push failed (continuing — may already be in sync)"
+# ─── 3. Run Prisma migrations ───────────────────────────
+echo "[$(date)] [3/8] Running Prisma migrations..."
+if [ "$BASELINE_EXISTING_DB" = "true" ]; then
+  echo "  ℹ️ BASELINE_EXISTING_DB=true — marking baseline migration as applied for an existing production database"
+  npx prisma migrate resolve --applied 20260623000000_init_baseline 2>&1 || true
+fi
+npx prisma migrate deploy 2>&1 || {
+  echo "  ✗ Prisma migrations failed. Refusing to run destructive schema sync in production."
+  echo "  If this is an existing database created before migrations, rerun once with BASELINE_EXISTING_DB=true."
+  exit 1
 }
-echo "  ✓ Database schema synced"
+echo "  ✓ Database migrations applied"
 
 # ─── 4. Run seeders (idempotent) ────────────────────────
 echo "[$(date)] [4/8] Running seeders..."

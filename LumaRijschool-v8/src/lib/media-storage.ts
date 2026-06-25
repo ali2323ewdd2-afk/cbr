@@ -17,6 +17,7 @@ export type MediaKind = keyof typeof allowedTypes
 export interface StoredMedia {
   fileName: string
   url: string
+  fileUrl: string
   mimeType: string
   sizeBytes: number
 }
@@ -52,9 +53,11 @@ export async function storeAdminMedia(file: File, kind: MediaKind): Promise<Stor
   const bytes = Buffer.from(await file.arrayBuffer())
   await writeFile(join(uploadRoot, fileName), bytes)
 
+  const url = `/uploads/admin/${kind}/${fileName}`
   return {
     fileName,
-    url: `/uploads/admin/${kind}/${fileName}`,
+    url,
+    fileUrl: url,
     mimeType: file.type,
     sizeBytes: file.size,
   }

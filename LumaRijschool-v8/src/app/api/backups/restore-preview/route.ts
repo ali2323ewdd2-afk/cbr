@@ -14,7 +14,7 @@ async function requireAdmin() {
 export async function POST(req: Request) {
   const session = await requireAdmin()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { action, filename } = await req.json()
+  const { action, filename, confirmation } = await req.json()
 
   if (action === 'preview') {
     const backups = await listBackups()
@@ -31,6 +31,9 @@ export async function POST(req: Request) {
   }
 
   if (action === 'restore') {
+    if (confirmation !== 'RESTORE') {
+      return NextResponse.json({ error: 'Restore confirmation is required' }, { status: 400 })
+    }
     const result = await restoreFromBackup(filename)
     return NextResponse.json(result)
   }

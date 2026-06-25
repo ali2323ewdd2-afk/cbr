@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { blockIp } from '@/lib/security'
-import { forbiddenResponse, readJson, requireAdminSession, serverErrorResponse } from '@/lib/admin-api'
+import { forbiddenResponse, readJson, requireAdminOnlySession, requireAdminSession, serverErrorResponse } from '@/lib/admin-api'
 
 const actionSchema = z.object({
   action: z.enum(['BLOCK_IP', 'UNBLOCK_IP', 'REVOKE_DEVICE']),
@@ -51,7 +51,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   const parsed = await readJson(req, actionSchema)

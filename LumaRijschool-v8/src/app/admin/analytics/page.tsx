@@ -12,10 +12,18 @@ import {
 export default function AdminAnalyticsPage() {
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/stats').then((r) => r.json()).then((d) => {
+    fetch('/api/admin/stats').then(async (r) => {
+      const d = await r.json()
+      if (!r.ok || !d.totals || !Array.isArray(d.revenueByMonth)) throw new Error(d.error || 'Analytics laden mislukt')
+      return d
+    }).then((d) => {
       setStats(d)
+      setLoading(false)
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Analytics laden mislukt')
       setLoading(false)
     })
   }, [])
@@ -23,7 +31,7 @@ export default function AdminAnalyticsPage() {
   if (loading || !stats) {
     return (
       <AdminShell title="Analytics">
-        <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" /></div>
+        {loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" /></div> : <div className="rounded-2xl bg-[#FEF2F2] p-4 text-sm text-[#EF4444]">{error ?? 'Analytics data niet beschikbaar'}</div>}
       </AdminShell>
     )
   }

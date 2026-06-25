@@ -13,6 +13,14 @@ export async function requireAdminSession() {
   return session
 }
 
+export async function requireAdminOnlySession() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id || session.user.role !== 'ADMIN') {
+    return null
+  }
+  return session
+}
+
 export function forbiddenResponse() {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }

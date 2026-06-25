@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { forbiddenResponse, parsePagination, readJson, requireAdminSession, serverErrorResponse } from '@/lib/admin-api'
+import { forbiddenResponse, parsePagination, readJson, requireAdminOnlySession, requireAdminSession, serverErrorResponse } from '@/lib/admin-api'
 
 const createUserSchema = z.object({
   name: z.string().trim().max(160).optional().nullable(),
@@ -100,7 +100,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   const parsed = await readJson(req, createUserSchema)

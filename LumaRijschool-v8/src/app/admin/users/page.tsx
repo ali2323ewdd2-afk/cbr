@@ -66,6 +66,7 @@ export default function AdminUsersPage() {
 
   async function doAction(action: 'BAN' | 'UNBAN' | 'DELETE' | 'EXTEND_SUB') {
     if (!actionUser) return
+    if (action === 'DELETE' && !window.confirm(`Gebruiker ${actionUser.email} permanent verwijderen?`)) return
     const res = await fetch(`/api/admin/users/${actionUser.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

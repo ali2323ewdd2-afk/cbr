@@ -6,6 +6,7 @@ import { existsSync, readdirSync, statSync, createReadStream } from 'fs'
 import { join } from 'path'
 import { Readable } from 'stream'
 import { backupPath, createDatabaseBackup, restoreFromBackup, verifyBackup } from '@/lib/backup-service'
+import { requireAdminOnlySession } from '@/lib/admin-api'
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions)
@@ -55,7 +56,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await requireAdmin()
+  const session = await requireAdminOnlySession()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const body = await req.json().catch(() => ({})) as { action?: string; filename?: string; confirmation?: string }

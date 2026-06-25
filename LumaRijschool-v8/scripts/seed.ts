@@ -31,7 +31,7 @@ async function main() {
   // ─── 2. PLANS ────────────────────────────────────────────
   const weekPlan = await prisma.plan.upsert({
     where: { slug: 'WEEK' },
-    update: {},
+    update: { stripePriceId: process.env.STRIPE_PRICE_WEEK || undefined },
     create: {
       slug: 'WEEK',
       name: 'Week',
@@ -39,13 +39,14 @@ async function main() {
       priceCents: 1299,
       currency: 'EUR',
       durationDays: 7,
+      stripePriceId: process.env.STRIPE_PRICE_WEEK || null,
       isPopular: false,
       features: JSON.stringify(['Alle lessen & examens', 'Foutenanalyse', 'Mobiele app']),
     },
   })
   const monthPlan = await prisma.plan.upsert({
     where: { slug: 'MONTH' },
-    update: {},
+    update: { stripePriceId: process.env.STRIPE_PRICE_MONTH || undefined },
     create: {
       slug: 'MONTH',
       name: 'Month',
@@ -53,6 +54,7 @@ async function main() {
       priceCents: 2999,
       currency: 'EUR',
       durationDays: 30,
+      stripePriceId: process.env.STRIPE_PRICE_MONTH || null,
       isPopular: true,
       features: JSON.stringify(['Alles uit Week', 'AI Tutor onbeperkt', 'Study planner', 'Persoonlijke voortgang', 'Prioriteit support']),
     },

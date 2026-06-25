@@ -76,6 +76,19 @@ export default function LessonDetailPage() {
     setAiLoading(false)
   }
 
+  async function trackVideo(event: 'PLAY' | 'PAUSE' | 'SEEK' | 'ENDED', media: HTMLVideoElement) {
+    await fetch('/api/video-analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lessonId: params.id,
+        event,
+        positionSec: Math.floor(media.currentTime || 0),
+        durationSec: Math.floor(media.duration || lesson?.durationSec || 0),
+      }),
+    }).catch(() => null)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -134,7 +147,15 @@ export default function LessonDetailPage() {
                   allowFullScreen
                 />
               ) : (
-                <video src={lesson.videoUrl} className="w-full h-full" controls />
+                <video
+                  src={lesson.videoUrl}
+                  className="w-full h-full"
+                  controls
+                  onPlay={(event) => void trackVideo('PLAY', event.currentTarget)}
+                  onPause={(event) => void trackVideo('PAUSE', event.currentTarget)}
+                  onSeeked={(event) => void trackVideo('SEEK', event.currentTarget)}
+                  onEnded={(event) => void trackVideo('ENDED', event.currentTarget)}
+                />
               )}
             </div>
             <div className="p-5">

@@ -100,7 +100,10 @@ export async function handleStripeWebhook(payload: Buffer, signature: string) {
       const planSlug = session.metadata?.planSlug
       if (!userId || !planSlug) return { received: true, error: 'missing metadata' }
       const payment = await prisma.payment.findFirst({ where: { stripeSessionId: session.id } })
-      if (payment) await activateSubscription(payment.id, session.id)
+      if (payment) {
+        const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
+        await activateSubscription(payment.id, session.id, paymentIntentId)
+      }
       break
     }
     case 'payment_intent.payment_failed': {
@@ -158,6 +161,10 @@ export async function handleStripeWebhook(payload: Buffer, signature: string) {
             stripeRefundId: charge.refunds?.data[0]?.id,
           },
         })
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'REFUNDED' },
+        })
         // If full refund, deactivate subscription
         if (charge.amount_refunded >= charge.amount) {
           await prisma.subscription.updateMany({
@@ -214,7 +221,7 @@ export async function handleStripeWebhook(payload: Buffer, signature: string) {
 }
 
 // ─── Activate subscription after successful payment ─────
-export async function activateSubscription(paymentId: string, stripeSessionId?: string) {
+export async function activateSubscription(paymentId: string, stripeSessionId?: string, stripePaymentIntentId?: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: { plan: true, user: true },
@@ -227,7 +234,11 @@ export async function activateSubscription(paymentId: string, stripeSessionId?: 
 
   const updated = await prisma.payment.update({
     where: { id: paymentId },
-    data: { status: 'PAID', stripeSessionId: stripeSessionId ?? payment.stripeSessionId },
+    data: {
+      status: 'PAID',
+      stripeSessionId: stripeSessionId ?? payment.stripeSessionId,
+      ...(stripePaymentIntentId ? { stripePaymentIntentId } : {}),
+    },
   })
 
   // Activate subscription (handles upgrade/downgrade)
@@ -282,21 +293,31 @@ export async function createRefund(paymentId: string, reason: string = 'REQUESTE
   // Find the payment intent from the session
   const session = await stripe.checkout.sessions.retrieve(payment.stripeSessionId)
   if (!session.payment_intent) throw new Error('No payment intent found')
+  const paymentIntentId = session.payment_intent as string
 
   const refund = await stripe.refunds.create({
-    payment_intent: session.payment_intent as string,
+    payment_intent: paymentIntentId,
     reason: reason as any,
   })
 
-  await prisma.refund.create({
-    data: {
-      paymentId,
-      amountCents: payment.amountCents,
-      reason,
-      status: refund.status === 'succeeded' ? 'SUCCEEDED' : 'PENDING',
-      stripeRefundId: refund.id,
-    },
-  })
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: refund.status === 'succeeded' ? 'REFUNDED' : payment.status,
+        stripePaymentIntentId: payment.stripePaymentIntentId ?? paymentIntentId,
+      },
+    }),
+    prisma.refund.create({
+      data: {
+        paymentId,
+        amountCents: payment.amountCents,
+        reason,
+        status: refund.status === 'succeeded' ? 'SUCCEEDED' : 'PENDING',
+        stripeRefundId: refund.id,
+      },
+    }),
+  ])
 
   await audit({ action: 'REFUND_CREATED', entity: 'Payment', entityId: paymentId, metadata: JSON.stringify({ amount: payment.amountCents, reason }) })
 

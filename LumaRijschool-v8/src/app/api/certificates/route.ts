@@ -7,7 +7,7 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const certs = await prisma.certificate.findMany({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, status: 'ISSUED' },
     orderBy: { issuedAt: 'desc' },
   })
   return NextResponse.json({ certificates: certs })

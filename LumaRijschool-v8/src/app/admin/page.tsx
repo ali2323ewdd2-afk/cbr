@@ -18,16 +18,32 @@ export default function AdminDashboardPage() {
   const [activity, setActivity] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/stats').then((r) => r.json()),
-      fetch('/api/admin/activity').then((r) => r.json()),
-      fetch('/api/admin/users?pageSize=5').then((r) => r.json()),
+      fetch('/api/admin/stats').then(async (r) => {
+        const body = await r.json()
+        if (!r.ok || !body.totals || !Array.isArray(body.revenueByMonth)) throw new Error(body.error || 'Stats laden mislukt')
+        return body
+      }),
+      fetch('/api/admin/activity').then(async (r) => {
+        const body = await r.json()
+        if (!r.ok) throw new Error(body.error || 'Activiteit laden mislukt')
+        return body
+      }),
+      fetch('/api/admin/users?pageSize=5').then(async (r) => {
+        const body = await r.json()
+        if (!r.ok) throw new Error(body.error || 'Gebruikers laden mislukt')
+        return body
+      }),
     ]).then(([s, a, u]) => {
       setStats(s)
       setActivity(a.activity || [])
       setUsers(u.users || [])
+      setLoading(false)
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Dashboard laden mislukt')
       setLoading(false)
     })
   }, [])
@@ -35,7 +51,7 @@ export default function AdminDashboardPage() {
   if (loading || !stats) {
     return (
       <AdminShell title="Admin Dashboard">
-        <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" /></div>
+        {loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" /></div> : <div className="rounded-2xl bg-[#FEF2F2] p-4 text-sm text-[#EF4444]">{error ?? 'Dashboard data niet beschikbaar'}</div>}
       </AdminShell>
     )
   }

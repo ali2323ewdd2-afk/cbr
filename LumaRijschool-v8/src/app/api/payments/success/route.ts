@@ -26,7 +26,8 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL('/pricing?error=not_paid', url.origin))
     }
     // Activate subscription (idempotent)
-    await activateSubscription(payment.id, sessionId)
+    const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
+    await activateSubscription(payment.id, sessionId, paymentIntentId)
     return NextResponse.redirect(new URL('/dashboard?subscribed=1', url.origin))
   } catch (e: any) {
     console.error('Stripe verification failed:', e.message)

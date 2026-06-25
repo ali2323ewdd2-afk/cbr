@@ -5,6 +5,7 @@ import {
   forbiddenResponse,
   parsePagination,
   readJson,
+  requireAdminOnlySession,
   requireAdminSession,
   serverErrorResponse,
 } from '@/lib/admin-api'
@@ -106,7 +107,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   const parsed = await readJson(req, refundSchema)

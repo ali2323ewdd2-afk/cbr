@@ -42,6 +42,7 @@ export default function AdminNotificationsPage() {
       toast.error('Titel en bericht zijn verplicht')
       return
     }
+    if (form.audience === 'ALL' && !window.confirm('Notificatie naar alle gebruikers verzenden?')) return
     const channels = ['IN_APP', ...(form.email ? ['EMAIL'] : []), ...(form.push ? ['PUSH'] : [])]
     const res = await fetch('/api/admin/notifications', {
       method: 'POST',

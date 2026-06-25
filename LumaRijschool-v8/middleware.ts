@@ -12,6 +12,33 @@ const PUBLIC_PATHS = [
   '/faq',
 ]
 
+const ADMIN_ONLY_PATHS = [
+  '/admin/backups',
+  '/admin/certificates',
+  '/admin/coupons',
+  '/admin/email-templates',
+  '/admin/emails',
+  '/admin/exams',
+  '/admin/invoices',
+  '/admin/lessons',
+  '/admin/monitoring',
+  '/admin/notifications',
+  '/admin/payments',
+  '/admin/plans',
+  '/admin/questions',
+  '/admin/refunds',
+  '/admin/results',
+  '/admin/reviews',
+  '/admin/roles',
+  '/admin/security',
+  '/admin/settings',
+  '/admin/subscriptions',
+  '/admin/topics',
+  '/admin/traffic-signs',
+  '/admin/video-analytics',
+  '/admin/videos',
+]
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -24,6 +51,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/plans') ||
     pathname.startsWith('/api/guest') ||
     pathname.startsWith('/api/health') ||
+    pathname.startsWith('/api/payments/webhook') ||
+    pathname.startsWith('/api/payments/success') ||
     pathname.startsWith('/api/announcements') ||
     pathname.startsWith('/socket.io') ||
     pathname.startsWith('/favicon') ||
@@ -66,6 +95,9 @@ export async function middleware(req: NextRequest) {
     }
     if (token.role !== 'ADMIN' && token.role !== 'SUPPORT') {
       return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+    if (token.role !== 'ADMIN' && ADMIN_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+      return NextResponse.redirect(new URL('/admin/support', req.url))
     }
     return NextResponse.next()
   }

@@ -41,10 +41,19 @@ export default function AdminExamDetailPage() {
   const params = useParams<{ id: string }>()
   const [data, setData] = useState<ExamDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/admin/exams/${params.id}`).then((res) => res.json()).then((body: ExamDetail) => {
+    fetch(`/api/admin/exams/${params.id}`).then(async (res) => {
+      const body = await res.json()
+      if (!res.ok || !body.exam || !body.stats) throw new Error(body.error || 'Examen laden mislukt')
+      return body as ExamDetail
+    }).then((body) => {
       setData(body)
+      setLoading(false)
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Examen laden mislukt')
+      setData(null)
       setLoading(false)
     })
   }, [params.id])
@@ -56,7 +65,7 @@ export default function AdminExamDetailPage() {
           <ArrowLeft className="h-4 w-4" /> Terug naar examens
         </Link>
         {loading ? <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[#2563EB]" /></div> : !data ? (
-          <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-8 text-center text-sm text-slate-500">Examen niet gevonden.</Card>
+          <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-8 text-center text-sm text-slate-500">{error ?? 'Examen niet gevonden.'}</Card>
         ) : (
           <>
             <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-6">

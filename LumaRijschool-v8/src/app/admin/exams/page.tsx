@@ -28,7 +28,7 @@ export default function AdminExamsPage() {
         { key: 'durationSec', label: 'Tijd (seconden)', type: 'number', defaultValue: 2700 },
         { key: 'passingScore', label: 'Slagingspercentage (0-1)', type: 'number', defaultValue: 0.875 },
         { key: 'questionCount', label: 'Aantal vragen', type: 'number', defaultValue: 40 },
-        { key: 'randomQuestions', label: 'Random questions', type: 'boolean', defaultValue: false },
+        { key: 'randomQuestions', label: 'Random questions', type: 'boolean', defaultValue: true },
         { key: 'isFree', label: 'Gratis', type: 'boolean', defaultValue: false },
         { key: 'isPublished', label: 'Gepubliceerd', type: 'boolean', defaultValue: false },
       ]}

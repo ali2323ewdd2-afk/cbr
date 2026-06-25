@@ -9,6 +9,7 @@ import {
   updateCategoryScore,
   calculateReadiness,
 } from '@/lib/gamification/engine'
+import { generateCertificatePdf } from '@/lib/certificate-pdf'
 
 interface SubmitAnswer {
   examQuestionId: string
@@ -116,6 +117,27 @@ export async function POST(
 
   await updateStreak(session.user.id)
   await checkProgressAchievements(session.user.id)
+
+  if (passed) {
+    const existingCertificate = await prisma.certificate.findFirst({ where: { examAttemptId: attempt.id } })
+    if (!existingCertificate) {
+      const certificateNumber = `LUMA-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`
+      const title = `Certificate voor ${attempt.exam.title}`
+      const body = `Geslaagd met ${Math.round(score * 100)}% voor ${attempt.exam.title}.`
+      const pdfUrl = await generateCertificatePdf({ certificateNumber, title, body, issuedAt: new Date() }).catch(() => null)
+      await prisma.certificate.create({
+        data: {
+          userId: session.user.id,
+          examAttemptId: attempt.id,
+          title,
+          body,
+          score,
+          certificateNumber,
+          pdfUrl,
+        },
+      }).catch(() => null)
+    }
+  }
 
   // Notification
   await prisma.notification.create({

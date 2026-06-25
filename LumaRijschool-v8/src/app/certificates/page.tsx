@@ -41,9 +41,11 @@ export default function CertificatesPage() {
                   <div className="text-xs text-slate-500 mt-2">Uitgegeven: {new Date(c.issuedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                   {c.score && <div className="text-xs text-[#16A34A] font-semibold mt-1">Score: {Math.round(c.score * 100)}%</div>}
                   {c.pdfUrl && (
-                    <Button variant="outline" size="sm" className="mt-3 rounded-xl border-[#FFB020]/30">
-                      <Download className="w-3.5 h-3.5 mr-1.5" /> PDF
-                    </Button>
+                    <a href={c.pdfUrl} target="_blank" rel="noreferrer">
+                      <Button variant="outline" size="sm" className="mt-3 rounded-xl border-[#FFB020]/30">
+                        <Download className="w-3.5 h-3.5 mr-1.5" /> PDF
+                      </Button>
+                    </a>
                   )}
                 </div>
               </div>

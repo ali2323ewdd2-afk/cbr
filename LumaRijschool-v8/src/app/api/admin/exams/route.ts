@@ -35,7 +35,7 @@ async function resolveQuestionIds(input: {
   questionCount?: number
   questionIds?: string[]
 }) {
-  if (input.randomQuestions) {
+  if (input.randomQuestions || !input.questionIds || input.questionIds.length === 0) {
     const candidates = await prisma.question.findMany({
       where: { isPublished: true },
       select: { id: true },

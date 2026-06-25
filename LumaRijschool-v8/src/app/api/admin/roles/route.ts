@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROLE_PERMISSIONS } from '@/lib/rbac'
+import { forbiddenResponse, requireAdminOnlySession, requireAdminSession } from '@/lib/admin-api'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await requireAdminSession()
+  if (!session) return forbiddenResponse()
   const roles = await prisma.role.findMany({
     include: { _count: { select: { users: true, permissions: true } } },
     orderBy: { slug: 'asc' },
@@ -15,10 +16,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const session = await requireAdminOnlySession()
+  if (!session) return forbiddenResponse()
   const { userId, roleSlug, action } = await req.json()
   const { assignRole, revokeRole } = await import('@/lib/rbac')
   if (action === 'assign') await assignRole(userId, roleSlug, session.user.id)

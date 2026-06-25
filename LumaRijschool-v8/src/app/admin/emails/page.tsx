@@ -43,6 +43,7 @@ export default function AdminEmailsPage() {
       toast.error('Subject en HTML zijn verplicht')
       return
     }
+    if ((form.audience === 'ALL' || form.audience === 'SUBSCRIBERS') && !window.confirm(`Email verzenden naar ${form.audience === 'ALL' ? 'iedereen' : 'alle abonnees'}?`)) return
     setSending(true)
     const res = await fetch('/api/admin/emails', {
       method: 'POST',

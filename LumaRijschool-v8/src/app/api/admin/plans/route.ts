@@ -6,6 +6,7 @@ import {
   forbiddenResponse,
   parsePagination,
   readJson,
+  requireAdminOnlySession,
   requireAdminSession,
   serverErrorResponse,
   slugify,
@@ -66,7 +67,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   const parsed = await readJson(req, planSchema)
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   const parsed = await readJson(req, patchSchema)
@@ -128,7 +129,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   const id = new URL(req.url).searchParams.get('id')

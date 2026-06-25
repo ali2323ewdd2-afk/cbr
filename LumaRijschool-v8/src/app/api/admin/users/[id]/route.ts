@@ -6,6 +6,7 @@ import {
   badRequestResponse,
   forbiddenResponse,
   readJson,
+  requireAdminOnlySession,
   requireAdminSession,
   serverErrorResponse,
 } from '@/lib/admin-api'
@@ -18,6 +19,28 @@ const patchSchema = z.object({
   password: z.string().min(8).max(200).optional(),
 })
 
+const safeUserSelect = {
+  id: true,
+  email: true,
+  name: true,
+  phone: true,
+  role: true,
+  country: true,
+  device: true,
+  avatarUrl: true,
+  examDate: true,
+  studyGoal: true,
+  dailyGoalMin: true,
+  emailVerified: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLoginAt: true,
+  lastLoginIp: true,
+  banned: true,
+  referralCode: true,
+  referredById: true,
+} as const
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -29,7 +52,8 @@ export async function GET(
   try {
     const user = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        ...safeUserSelect,
         subscription: { include: { plan: true } },
         payments: { include: { plan: true }, orderBy: { createdAt: 'desc' }, take: 20 },
         examAttempts: { include: { exam: true }, orderBy: { startedAt: 'desc' }, take: 20 },
@@ -58,14 +82,14 @@ export async function PATCH(
 
   try {
     if (action === 'BAN' || action === 'DISABLE') {
-      const user = await prisma.user.update({ where: { id }, data: { banned: true } })
+      const user = await prisma.user.update({ where: { id }, data: { banned: true }, select: safeUserSelect })
       await prisma.auditLog.create({
         data: { actorId: session.user.id, action: 'USER_BANNED', entity: 'User', entityId: id },
       })
       return NextResponse.json({ user })
     }
     if (action === 'UNBAN' || action === 'ENABLE') {
-      const user = await prisma.user.update({ where: { id }, data: { banned: false } })
+      const user = await prisma.user.update({ where: { id }, data: { banned: false }, select: safeUserSelect })
       await prisma.auditLog.create({
         data: { actorId: session.user.id, action: 'USER_UNBANNED', entity: 'User', entityId: id },
       })
@@ -87,6 +111,7 @@ export async function PATCH(
       return NextResponse.json({ ok: true })
     }
     if (action === 'DELETE') {
+      if (session.user.role !== 'ADMIN') return forbiddenResponse()
       await prisma.user.delete({ where: { id } })
       await prisma.auditLog.create({
         data: { actorId: session.user.id, action: 'USER_DELETED', entity: 'User', entityId: id },
@@ -94,6 +119,7 @@ export async function PATCH(
       return NextResponse.json({ ok: true })
     }
     if (action === 'CHANGE_PASSWORD') {
+      if (session.user.role !== 'ADMIN') return forbiddenResponse()
       if (!parsed.data.password) return badRequestResponse('Password is required')
       const passwordHash = await bcrypt.hash(parsed.data.password, 12)
       await prisma.user.update({ where: { id }, data: { passwordHash } })
@@ -110,6 +136,7 @@ export async function PATCH(
         ...(parsed.data.email !== undefined ? { email: parsed.data.email } : {}),
         ...(parsed.data.phone !== undefined ? { phone: parsed.data.phone || null } : {}),
       },
+      select: safeUserSelect,
     })
     await prisma.auditLog.create({
       data: { actorId: session.user.id, action: 'USER_UPDATED', entity: 'User', entityId: id },
@@ -125,7 +152,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const session = await requireAdminSession()
+  const session = await requireAdminOnlySession()
   if (!session) return forbiddenResponse()
 
   try {
