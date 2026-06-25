@@ -49,7 +49,7 @@ export function courseSchema(course: { title: string; description: string }) {
     provider: {
       '@type': 'Organization',
       name: 'LumaRijschool',
-      sameAs: 'https://lumarijschool.nl',
+      sameAs: 'https://lumatheorie.nl',
     },
   }
 }

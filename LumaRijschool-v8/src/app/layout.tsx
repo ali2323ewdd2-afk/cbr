@@ -21,6 +21,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://lumatheorie.nl"),
   title: "LumaRijschool · Leer slimmer. Slaag sneller.",
   description:
     "Het slimste theorieplatform van Nederland. Meer dan 2.000 oefenvragen, CBR-stijl examens, AI-uitleg en een studieplanner. Slaag in één keer.",
@@ -41,6 +42,15 @@ export const metadata: Metadata = {
       "Meer dan 2.000 oefenvragen, CBR-stijl examens en AI-uitleg bij elke fout.",
     siteName: "LumaRijschool",
     type: "website",
+    url: "https://lumatheorie.nl",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LumaRijschool · Leer slimmer. Slaag sneller.",
+    description: "Meer dan 2.000 oefenvragen, CBR-stijl examens en AI-uitleg bij elke fout.",
+  },
+  alternates: {
+    canonical: "https://lumatheorie.nl",
   },
 };
 

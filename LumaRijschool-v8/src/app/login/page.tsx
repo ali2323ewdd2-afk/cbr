@@ -98,7 +98,7 @@ function LoginForm() {
             <div className="mt-5 rounded-2xl bg-[#F4F7FB] p-3 text-xs text-slate-600">
               <div className="font-semibold text-[#0B1B3B] mb-1">Demo accounts:</div>
               <div>👨‍🎓 Student: <code>ahmed@email.nl</code> / <code>student123</code></div>
-              <div>🛠️ Admin: <code>admin@lumarijschool.nl</code> / <code>admin123</code></div>
+              <div>🛠️ Admin: <code>admin@lumatheorie.nl</code> / <code>admin123</code></div>
             </div>
           )}
         </Card>

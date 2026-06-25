@@ -9,7 +9,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const stats = await getReferralStats(session.user.id)
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://lumatheorie.nl'
   const link = `${baseUrl}/register?ref=${stats.code}`
 
   // Recent referrals

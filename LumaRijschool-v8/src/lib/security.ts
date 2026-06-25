@@ -146,7 +146,7 @@ export async function sendLoginAlert({
         <li><strong>Tijdstip:</strong> ${new Date().toLocaleString('nl-NL')}</li>
       </ul>
       <p>Was jij dit? Dan kun je dit bericht negeren. Was dit niet jij? Log direct in en wijzig je wachtwoord.</p>
-      <a href="https://lumarijschool.nl/profile" style="background:#2563EB;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">Naar profiel</a>
+      <a href="https://lumatheorie.nl/profile" style="background:#2563EB;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">Naar profiel</a>
     </div>
   `
   await sendEmail({ to: email, subject, html })

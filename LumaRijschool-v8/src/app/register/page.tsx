@@ -179,7 +179,7 @@ function RegisterForm() {
               {loading ? 'Bezig...' : 'Start mijn eerste les'} <ArrowRight className="ml-1.5 w-4 h-4" />
             </Button>
             <div className="text-xs text-slate-500 mt-3">
-              {planSlug === 'MONTH' ? 'Je kiest daarna het Month-abonnement voor volledige toegang.' : 'Je kunt direct gratis beginnen.'}
+              {planSlug === 'MONTH' ? 'Je kiest daarna het Month-abonnement (€35,00) voor volledige toegang.' : planSlug === 'WEEK' ? 'Je kiest daarna het Week-abonnement (€13,00) voor volledige toegang.' : 'Je kunt direct gratis beginnen.'}
             </div>
           </Card>
         )}

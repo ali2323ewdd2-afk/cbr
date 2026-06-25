@@ -280,10 +280,10 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
             <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-7">
               <div className="font-display font-bold text-2xl text-[#0B1B3B]">Week</div>
-              <div className="text-sm text-slate-500 mt-1">7 dagen toegang</div>
-              <div className="font-display font-extrabold text-5xl text-[#0B1B3B] mt-5">€12,99</div>
+              <div className="text-sm text-slate-500 mt-1">7 dagen onbeperkte toegang</div>
+              <div className="font-display font-extrabold text-5xl text-[#0B1B3B] mt-5">€13,00</div>
               <ul className="mt-5 space-y-2.5 text-sm">
-                {['Alle lessen & examens', 'Foutenanalyse', 'Mobiele app', '24/7 beschikbaar'].map((f) => (
+                {['Unlimited theory exams', 'Unlimited lessons', 'Unlimited practice', 'Unlimited access'].map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-[#1FB871]" /> {f}
                   </li>
@@ -296,10 +296,10 @@ export default function LandingPage() {
             <Card className="rounded-3xl border-0 shadow-luma p-7 relative overflow-hidden bg-blue-gradient text-white">
               <div className="absolute top-0 right-0 bg-[#FFB020] text-white text-xs font-bold px-3 py-1.5 rounded-bl-2xl">Meest gekozen</div>
               <div className="font-display font-bold text-2xl">Month</div>
-              <div className="text-sm text-white/80 mt-1">30 dagen toegang</div>
-              <div className="font-display font-extrabold text-5xl mt-5">€29,99</div>
+              <div className="text-sm text-white/80 mt-1">30 dagen onbeperkte toegang</div>
+              <div className="font-display font-extrabold text-5xl mt-5">€35,00</div>
               <ul className="mt-5 space-y-2.5 text-sm">
-                {['Alles uit Week', 'AI Tutor onbeperkt', 'Study planner', 'Persoonlijke voortgang', 'Prioriteit support'].map((f) => (
+                {['Unlimited theory exams', 'Unlimited lessons', 'Unlimited practice', 'Unlimited access'].map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-white" /> {f}
                   </li>

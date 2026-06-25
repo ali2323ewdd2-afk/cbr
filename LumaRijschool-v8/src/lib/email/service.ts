@@ -37,7 +37,7 @@ export async function sendEmail({
   }
   try {
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'LumaRijschool <noreply@lumarijschool.nl>',
+      from: process.env.SMTP_FROM || 'Luma Theorie <noreply@lumatheorie.nl>',
       to,
       subject,
       html,
@@ -57,10 +57,10 @@ export const emailTemplates = {
       <div style="font-family:system-ui;max-width:560px;margin:0 auto;padding:24px;">
         <h1 style="color:#2563EB;">Welkom ${name}!</h1>
         <p>Je account is aangemaakt. Begin meteen met je eerste gratis lessen.</p>
-        <a href="https://lumarijschool.nl/dashboard" style="background:#2563EB;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">Naar dashboard</a>
+        <a href="https://lumatheorie.nl/dashboard" style="background:#2563EB;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">Naar dashboard</a>
       </div>
     `,
-    text: `Welkom ${name}! Je account is aangemaakt. Ga naar https://lumarijschool.nl/dashboard om te beginnen.`,
+    text: `Welkom ${name}! Je account is aangemaakt. Ga naar https://lumatheorie.nl/dashboard om te beginnen.`,
   }),
   paymentConfirmation: (name: string, planName: string, amount: string, expiresAt: string) => ({
     subject: `Betaling bevestigd — ${planName} actief`,
@@ -69,7 +69,7 @@ export const emailTemplates = {
         <h1 style="color:#1FB871;">Bedankt voor je aankoop, ${name}!</h1>
         <p>Je <strong>${planName}</strong>-abonnement is actief tot <strong>${expiresAt}</strong>.</p>
         <p>Bedrag: <strong>${amount}</strong></p>
-        <a href="https://lumarijschool.nl/dashboard" style="background:#2563EB;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">Start met leren</a>
+        <a href="https://lumatheorie.nl/dashboard" style="background:#2563EB;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">Start met leren</a>
       </div>
     `,
     text: `Betaling bevestigd. ${planName} actief tot ${expiresAt}.`,

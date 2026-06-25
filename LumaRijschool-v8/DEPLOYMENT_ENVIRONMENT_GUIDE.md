@@ -31,7 +31,7 @@ Do **not** commit `.env.production` with real secrets.
 |---|---|---:|---|---|
 | `NODE_ENV` | Node/Next runtime mode. | Yes | `production` | `production` |
 | `PORT` | Next.js app port inside container. | Yes | `3000` | Integer, normally `3000` |
-| `NEXTAUTH_URL` | Public canonical URL used by NextAuth, redirects, emails, cookies. | Yes | `https://rijschool.example.com` | Full HTTPS origin, no trailing slash |
+| `NEXTAUTH_URL` | Public canonical URL used by NextAuth, redirects, emails, cookies. | Yes | `https://lumatheorie.nl` | Full HTTPS origin, no trailing slash |
 | `NEXTAUTH_SECRET` | Signs/encrypts NextAuth JWT/session cookies and impersonation tokens. | Yes | `CHANGE_ME_RANDOM_32_BYTE_OR_LONGER_SECRET` | Strong random secret, 32+ bytes |
 | `SHOW_DEMO_CREDENTIALS` | Shows demo credentials in logs/UI when explicitly enabled. | Optional | `false` | `true` or `false`; keep `false` in production |
 | `POSTGRES_USER` | PostgreSQL username created by postgres container. | Yes | `luma` | Plain username |

@@ -28,6 +28,14 @@ npm run test
 
 Result: passed.
 
+Stripe live verification:
+
+- Configured week price was retrieved successfully from Stripe and is active with unit amount `1300` EUR cents.
+- Configured month price was retrieved successfully from Stripe and is active with unit amount `3500` EUR cents.
+- A Stripe Checkout Session was created successfully against the configured live week price.
+- The created session was unpaid and no payment was completed during verification.
+- The live Stripe secret/webhook values used for this verification are not committed because GitHub Push Protection blocks live secrets. The committed `.env.production` contains non-empty safe placeholders for those secrets and must be replaced on the server.
+
 ## Deployment verification script
 
 The following was executed:
@@ -74,7 +82,15 @@ Verified:
 | Admin panel `/admin` | 307 redirect to login, expected without session |
 | `/api/gamification/ranks` | 200 |
 | `/api/internal/middleware-guard` | 200 |
+| `/sitemap.xml` | 200 |
+| `/robots.txt` | 200 |
+| `/api/plans` | 200 degraded fallback without DB |
+| `/api/traffic-signs` | 200 degraded fallback without DB |
+| `/api/faq` | 200 degraded fallback without DB |
+| `/api/landing/stats` | 200 degraded fallback without DB |
 | WebSocket `/health` | 200 |
+
+The runtime used `.env.production` with `NEXTAUTH_URL=https://lumatheorie.nl`.
 
 ## Prisma connection
 

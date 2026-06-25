@@ -14,10 +14,10 @@ async function main() {
   // ─── 1. ADMIN ────────────────────────────────────────────
   const adminPass = await bcrypt.hash('admin123', 12)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@lumarijschool.nl' },
+    where: { email: 'admin@lumatheorie.nl' },
     update: {},
     create: {
-      email: 'admin@lumarijschool.nl',
+      email: 'admin@lumatheorie.nl',
       name: 'Luma Admin',
       phone: '+31 6 12345678',
       passwordHash: adminPass,
@@ -31,32 +31,49 @@ async function main() {
   // ─── 2. PLANS ────────────────────────────────────────────
   const weekPlan = await prisma.plan.upsert({
     where: { slug: 'WEEK' },
-    update: { stripePriceId: process.env.STRIPE_PRICE_WEEK || undefined },
+    update: {
+      name: 'Week',
+      description: 'Unlimited theory exams, lessons, practice and access for 7 days',
+      priceCents: 1300,
+      currency: 'EUR',
+      durationDays: 7,
+      stripePriceId: process.env.STRIPE_PRICE_WEEK || undefined,
+      features: JSON.stringify(['Unlimited theory exams', 'Unlimited lessons', 'Unlimited practice', 'Unlimited access']),
+    },
     create: {
       slug: 'WEEK',
       name: 'Week',
-      description: '7 dagen toegang',
-      priceCents: 1299,
+      description: 'Unlimited theory exams, lessons, practice and access for 7 days',
+      priceCents: 1300,
       currency: 'EUR',
       durationDays: 7,
       stripePriceId: process.env.STRIPE_PRICE_WEEK || null,
       isPopular: false,
-      features: JSON.stringify(['Alle lessen & examens', 'Foutenanalyse', 'Mobiele app']),
+      features: JSON.stringify(['Unlimited theory exams', 'Unlimited lessons', 'Unlimited practice', 'Unlimited access']),
     },
   })
   const monthPlan = await prisma.plan.upsert({
     where: { slug: 'MONTH' },
-    update: { stripePriceId: process.env.STRIPE_PRICE_MONTH || undefined },
+    update: {
+      name: 'Month',
+      description: 'Unlimited theory exams, lessons, practice and access for 30 days',
+      priceCents: 3500,
+      currency: 'EUR',
+      durationDays: 30,
+      stripePriceId: process.env.STRIPE_PRICE_MONTH || undefined,
+      isPopular: true,
+      features: JSON.stringify(['Unlimited theory exams', 'Unlimited lessons', 'Unlimited practice', 'Unlimited access']),
+    },
     create: {
       slug: 'MONTH',
       name: 'Month',
-      description: '30 dagen toegang',
-      priceCents: 2999,
+      description: 'Unlimited theory exams, lessons, practice and access for 30 days',
+      priceCents: 3500,
       currency: 'EUR',
       durationDays: 30,
       stripePriceId: process.env.STRIPE_PRICE_MONTH || null,
       isPopular: true,
-      features: JSON.stringify(['Alles uit Week', 'AI Tutor onbeperkt', 'Study planner', 'Persoonlijke voortgang', 'Prioriteit support']),
+      features: JSON.stringify(['Unlimited theory exams', 'Unlimited lessons', 'Unlimited practice', 'Unlimited access']),
     },
   })
   console.log('  ✓ plans:', weekPlan.slug, monthPlan.slug)
@@ -509,7 +526,7 @@ async function main() {
   console.log('  ✓ RBAC roles assigned')
 
   console.log('\n✅ Seed complete!\n')
-  console.log('   Admin:    admin@lumarijschool.nl / admin123')
+  console.log('   Admin:    admin@lumatheorie.nl / admin123')
   console.log('   Student:  ahmed@email.nl        / student123')
 }
 

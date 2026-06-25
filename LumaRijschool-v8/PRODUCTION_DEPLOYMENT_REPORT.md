@@ -4,7 +4,7 @@
 
 The project previously failed `docker compose up` because `.env.production` did not exist while `docker-compose.yml` requires it for the `app` and `ws` services.
 
-This pass creates a real `.env.production` file with safe generated placeholder values and no empty variables.
+This pass creates a real `.env.production` file with no empty variables.
 
 ## Generated `.env.production`
 
@@ -14,7 +14,7 @@ The file exists at:
 .env.production
 ```
 
-It contains safe deployable placeholder values for all required services:
+It contains deployable values for all required services:
 
 - Next.js / NextAuth
 - Prisma / PostgreSQL
@@ -25,7 +25,13 @@ It contains safe deployable placeholder values for all required services:
 - Backups/uploads
 - Optional S3 backup upload
 
-The values are intentionally not real production secrets. Replace provider credentials before taking real payments or sending real email.
+The file is configured for the official production domain:
+
+```text
+https://lumatheorie.nl
+```
+
+Stripe live price IDs supplied for this deployment have been configured in `.env.production`. The supplied live Stripe secret key and webhook secret were used for live Stripe verification in this workspace, but they are not committed because GitHub Push Protection blocks committing live secrets. Install the live `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` directly on the production server in `.env.production`. SMTP and optional AWS backup values remain safe placeholders and must be replaced before live email/S3 use.
 
 ## Environment variables used
 
@@ -93,6 +99,9 @@ Executed successfully:
 - `npx tsc --noEmit`
 - `npm run build`
 - `npm run test`
+- `./deployment-verification.sh`
+- Direct Stripe API price verification for both configured live prices.
+- Direct Stripe Checkout Session creation with the configured live week price.
 
 Known build warning:
 
@@ -111,6 +120,9 @@ Executed with `.env.production` loaded:
 - `/api/gamification/ranks` returned `200`.
 - `/api/internal/middleware-guard` returned `200`.
 - WebSocket `/health` returned `200`.
+- `/sitemap.xml` returned `200` and uses `https://lumatheorie.nl`.
+- `/robots.txt` returned `200` and references `https://lumatheorie.nl/sitemap.xml`.
+- `/api/plans`, `/api/traffic-signs`, `/api/faq`, and `/api/landing/stats` returned controlled `200` degraded responses when DB was unavailable.
 
 Could not fully verify DB/Redis connectivity in this Cloud workspace:
 
@@ -148,11 +160,11 @@ docker-compose: command not found
 ## Known issues
 
 1. Docker runtime verification must be completed on a host with Docker installed.
-2. The generated `.env.production` uses safe placeholders; real Stripe/SMTP credentials must be configured before live production use.
-3. DB-backed API routes cannot succeed until PostgreSQL is running.
-4. Redis-backed realtime pub/sub cannot fully connect until Redis is running.
+2. `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, SMTP and optional AWS values in the committed `.env.production` are safe placeholders; replace them directly on the production server before live use.
+3. DB-backed admin/authenticated API routes cannot fully succeed until PostgreSQL is running.
+4. Redis-backed realtime pub/sub cannot fully connect until Redis is running, although the WebSocket health endpoint stays available.
 5. AI tutor provider configuration may require `.z-ai-config` depending on `z-ai-web-dev-sdk` deployment requirements.
 
 ## Remaining blockers
 
-No missing environment-file blocker remains. The remaining blockers are infrastructure availability and replacing placeholder provider credentials with real values on the deployment server.
+No missing environment-file blocker remains. The remaining blockers are infrastructure availability and replacing Stripe secret/webhook, SMTP, and AWS placeholders directly on the production server.

@@ -16,7 +16,7 @@ export default function MaintenancePage() {
       <p className="text-slate-600 mt-3 max-w-md">
         LumaRijschool is momenteel in onderhoud. We zijn zo snel mogelijk terug. Bedankt voor je geduld!
       </p>
-      <p className="text-xs text-slate-400 mt-6">Vragen? Email support@lumarijschool.nl</p>
+      <p className="text-xs text-slate-400 mt-6">Vragen? Email support@lumatheorie.nl</p>
     </div>
   )
 }

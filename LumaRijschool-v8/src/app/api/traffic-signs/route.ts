@@ -6,6 +6,10 @@ export async function GET(req: Request) {
   const category = url.searchParams.get('category')
   const where: any = { isPublished: true }
   if (category) where.category = category
-  const signs = await prisma.trafficSign.findMany({ where, orderBy: { code: 'asc' } })
-  return NextResponse.json({ signs })
+  try {
+    const signs = await prisma.trafficSign.findMany({ where, orderBy: { code: 'asc' } })
+    return NextResponse.json({ signs })
+  } catch {
+    return NextResponse.json({ signs: [], degraded: true })
+  }
 }

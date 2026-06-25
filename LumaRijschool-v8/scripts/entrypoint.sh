@@ -104,7 +104,7 @@ echo "  LumaRijschool is ready!"
 if [ "$SHOW_DEMO_CREDENTIALS" = "true" ]; then
   echo "  Demo accounts:"
   echo "    Student: ahmed@email.nl / student123"
-  echo "    Admin:   admin@lumarijschool.nl / admin123"
+  echo "    Admin:   admin@lumatheorie.nl / admin123"
 fi
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
