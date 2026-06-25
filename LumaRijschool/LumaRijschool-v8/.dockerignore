@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+*.md
+tests/
+certs/
+backups/
+data/
+*.tsbuildinfo
+package-lock.json
+.env
+.env.local
+.env.*.local
