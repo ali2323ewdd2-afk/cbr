@@ -28,10 +28,23 @@ const io = new Server(httpServer, {
 })
 
 // Redis subscriber
-const subscriber = new Redis(REDIS_URL)
-const publisher = new Redis(REDIS_URL)
+const redisOptions = {
+  maxRetriesPerRequest: null,
+  retryStrategy: (times: number) => Math.min(times * 200, 2000),
+}
+const subscriber = new Redis(REDIS_URL, redisOptions)
+const publisher = new Redis(REDIS_URL, redisOptions)
 
-subscriber.subscribe('notifications:all', 'notifications:user', 'system:announcement')
+subscriber.on('error', (error) => {
+  console.error('[ws] redis subscriber error:', error.message)
+})
+publisher.on('error', (error) => {
+  console.error('[ws] redis publisher error:', error.message)
+})
+
+subscriber.subscribe('notifications:all', 'notifications:user', 'system:announcement').catch((error) => {
+  console.error('[ws] redis subscribe failed:', error.message)
+})
 subscriber.on('message', (channel, msg) => {
   try {
     const data = JSON.parse(msg)

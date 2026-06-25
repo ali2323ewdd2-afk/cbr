@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { prisma } from '@/lib/prisma'
 
 const PUBLIC_PATHS = [
   '/',
@@ -47,6 +46,7 @@ export async function middleware(req: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/internal/middleware-guard') ||
     pathname.startsWith('/api/public') ||
     pathname.startsWith('/api/landing') ||
     pathname.startsWith('/api/plans') ||
@@ -66,13 +66,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // IP blocking check
+  // IP blocking / maintenance check via Node runtime API.
+  // Middleware runs on the Edge runtime, so it must not import Prisma directly.
   const ip = (req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? '').split(',')[0].trim()
-  if (ip) {
-    const blocked = await prisma.ipBlock.findUnique({ where: { ip } })
-    if (blocked && (!blocked.expiresAt || blocked.expiresAt > new Date())) {
-      return new NextResponse('Forbidden', { status: 403 })
-    }
+  const guardUrl = new URL('/api/internal/middleware-guard', req.url)
+  if (ip) guardUrl.searchParams.set('ip', ip)
+  guardUrl.searchParams.set('path', pathname)
+  try {
+    const guard = await fetch(guardUrl, { cache: 'no-store' })
+    if (guard.status === 403) return new NextResponse('Forbidden', { status: 403 })
+    if (guard.status === 503) return NextResponse.redirect(new URL('/maintenance', req.url))
+  } catch {
+    // If the DB-backed guard is unavailable, continue to avoid taking down static pages.
   }
 
   // Public pages
@@ -85,13 +90,7 @@ export async function middleware(req: NextRequest) {
     secret: authSecret,
   })
 
-  // Maintenance mode check (only for non-admins)
-  if (token && token.role !== 'ADMIN') {
-    const maintenanceMode = await prisma.systemSetting.findUnique({ where: { key: 'MAINTENANCE_MODE' } })
-    if (maintenanceMode?.value === 'true' && !pathname.startsWith('/maintenance')) {
-      return NextResponse.redirect(new URL('/maintenance', req.url))
-    }
-  }
+  // Maintenance is checked by the Node runtime guard above.
 
   // Admin route protection
   if (pathname.startsWith('/admin')) {
