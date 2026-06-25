@@ -2,7 +2,16 @@
 
 ## 1. Configure environment
 
-Copy `.env.example` to your deployment environment and provide production values:
+For Docker Compose production deployments, copy `.env.production.example` to `.env.production` and provide production values:
+
+```bash
+cp .env.production.example .env.production
+chmod 600 .env.production
+```
+
+For local development, copy `.env.example` to `.env`.
+
+See `DEPLOYMENT_ENVIRONMENT_GUIDE.md` for the full variable-by-variable reference.
 
 - `DATABASE_URL`
 - `NEXTAUTH_SECRET`
