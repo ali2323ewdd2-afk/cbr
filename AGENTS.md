@@ -25,8 +25,41 @@ The notes below cover the non-obvious, durable things the update script does **n
 | WebSocket service | Optional | `npm run ws:dev` (port 3001) | Real-time notifications only; needs Redis to relay. |
 | Stripe / SMTP / AI / Turnstile | Optional | n/a | Stripe throws only when a payment function is invoked without keys; SMTP logs emails to the console in dev; others are feature-gated. |
 
-Nginx and the Docker Compose stack are production-only and are not needed (and Docker is
-not installed) for dev work.
+Nginx and the Docker Compose stack are production-only and are not needed for day-to-day
+dev work. Docker is **not** part of the standard dev setup (the update script does not
+install it), so a fresh VM has no Docker. The production stack *has* been verified to build
+and run via `docker compose` — see "Production Docker stack" below for the caveats.
+
+### Request handling: `proxy.ts`, not `middleware.ts` (important)
+
+Request interception lives in `LumaRijschool/LumaRijschool-v8/proxy.ts` (Next.js 16
+`proxy` convention, **Node.js runtime**). It calls Prisma (`ipBlock`, `systemSetting`).
+Do **not** move this logic back into a `middleware.ts` / rename the function to
+`middleware`: Next 16 runs `middleware.ts` on the **edge runtime**, where the standard
+Prisma client throws `PrismaClientValidationError: ... run Prisma Client on edge runtime`,
+which 500s every route in the production/standalone build (it silently "works" in
+`next dev` only because no `x-forwarded-for` header is present so the Prisma branch is
+skipped). `proxy.ts` (Node runtime) is required for Prisma to work there.
+
+Note: `proxy.ts` protects `/api/*` (returns 401 without a token), but the protected
+*page* routes (`/dashboard`, `/lessons`, …) are statically prerendered and are still
+served to logged-out users (they fail their data fetches client-side with 401). This is
+pre-existing app behavior, not an environment fault.
+
+### Production Docker stack (only if you install Docker manually)
+
+`docker compose` (in `LumaRijschool/LumaRijschool-v8`) builds postgres, redis, app, ws,
+nginx, adminer, backup. Verified working caveats:
+- The `app` and `ws` services require `.env.production` (git-ignored, so absent on a fresh
+  checkout). Create it with at least `NEXTAUTH_SECRET` / `NEXTAUTH_URL`; compose injects
+  `DATABASE_URL`/`REDIS_URL` for the container network.
+- On Docker 29+, the in-VM daemon needs `storage-driver: fuse-overlayfs` **and**
+  `features.containerd-snapshotter: false` in `/etc/docker/daemon.json`.
+- The app container becomes `healthy` (proves the `ENV HOSTNAME=0.0.0.0` fix) and the
+  entrypoint seeds + starts the server without hanging (proves the seeder `process.exit`
+  fix). Reach the app through nginx on host port 80 (e.g. `curl http://localhost/api/health`).
+- nginx serves the app even when the optional `adminer` service is down (`/adminer/`
+  returns 502 only); `/adminer/` returns 200 when adminer is up.
 
 ### Environment file (important)
 
