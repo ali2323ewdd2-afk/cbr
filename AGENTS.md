@@ -1,0 +1,87 @@
+# AGENTS.md
+
+## Repository layout
+
+- The repository root tracks `LumaRijschool-v8.zip`. The actual application lives in
+  `LumaRijschool/LumaRijschool-v8/` (extracted from that zip). All commands below run
+  from inside `LumaRijschool/LumaRijschool-v8` unless noted.
+- App: **LumaRijschool** — a Dutch driving-theory (CBR) study platform.
+  Next.js 16 (App Router, React 19, Turbopack) + Prisma 6 + PostgreSQL, with optional
+  Redis, a Socket.io WebSocket mini-service, Stripe, NextAuth (JWT credentials), and SMTP.
+
+## Cursor Cloud specific instructions
+
+The startup update script already runs `npm install` and `prisma generate` inside
+`LumaRijschool/LumaRijschool-v8` (extracting the zip first if the directory is missing).
+The notes below cover the non-obvious, durable things the update script does **not** do.
+
+### Services (dev mode)
+
+| Service | Required? | How to run | Notes |
+| --- | --- | --- | --- |
+| PostgreSQL 16 | Yes | `sudo pg_ctlcluster 16 main start` | Local cluster on `:5432`. DB `lumarijschool`, role `luma` / `luma_password`. Not started automatically — start it before `npm run dev`. |
+| Next.js app | Yes | `npm run dev` (`next dev -p 3000`) | Main app at http://localhost:3000. |
+| Redis 7 | Optional | `sudo service redis-server start` | `src/lib/redis.ts` falls back to in-memory if `REDIS_URL` is unset, so the app runs without it. |
+| WebSocket service | Optional | `npm run ws:dev` (port 3001) | Real-time notifications only; needs Redis to relay. |
+| Stripe / SMTP / AI / Turnstile | Optional | n/a | Stripe throws only when a payment function is invoked without keys; SMTP logs emails to the console in dev; others are feature-gated. |
+
+Nginx and the Docker Compose stack are production-only and are not needed (and Docker is
+not installed) for dev work.
+
+### Environment file (important)
+
+- `LumaRijschool/LumaRijschool-v8/.env` is git-ignored, so it is not committed. The version
+  inside the zip ships a **stale SQLite** `DATABASE_URL` (`file:/home/z/...`) that does **not**
+  match the PostgreSQL Prisma schema and will break `prisma`/the app if used as-is.
+- For dev, `.env` must point at the local Postgres and define NextAuth vars, e.g.:
+  ```
+  NODE_ENV=development
+  NEXTAUTH_URL=http://localhost:3000
+  NEXTAUTH_SECRET=<any-long-random-string>
+  DATABASE_URL="postgresql://luma:luma_password@localhost:5432/lumarijschool?schema=public"
+  REDIS_URL="redis://localhost:6379"
+  ```
+- If a fresh VM does not already have a working `.env`, recreate it before running Prisma.
+
+### Database bootstrap (one-time per fresh DB)
+
+Run from `LumaRijschool/LumaRijschool-v8` after Postgres is up and `.env` is correct:
+
+```
+npm run db:push     # prisma db push (no SQL migrations folder exists; db push is the path used)
+npm run db:seed     # scripts/seed.ts — see hang gotcha below
+```
+
+`npm run db:seed` also seeds RBAC roles/permissions (via `src/lib/rbac`), so the separate
+`scripts/seed-rbac.ts` is not required for a working dataset.
+
+Seeded demo accounts:
+- Admin: `admin@lumarijschool.nl` / `admin123`
+- Student: `ahmed@email.nl` / `student123`
+
+### Gotcha: `npm run db:seed` does not exit on its own
+
+The seed completes all DB work and prints `✅ Seed complete!`, but the Node process does
+**not** exit afterward (a lingering ioredis/Prisma handle keeps the event loop alive).
+Because the script is piped through `tail`, you may see no output until it is stopped.
+Verify completion by checking row counts (e.g. `SELECT count(*) FROM "User"`) or by tailing
+the log for `Seed complete`, then stop the process by its PID. The data is fully seeded even
+though the process hangs.
+
+### Auth / app behavior notes
+
+- Registration (`/register`) does **not** auto-login. After registering you must log in via
+  `/login`. NextAuth uses JWT credentials (`src/lib/auth.ts`).
+- Authenticated pages (`/dashboard`, `/lessons`, etc.) call APIs that return `401` when there
+  is no valid session; some of these client pages crash on the resulting `undefined` data if
+  visited while logged out. Log in first; once authenticated these pages work.
+- Lesson video players show "Video unavailable" in dev — lesson `videoUrl`s point at external
+  hosts that are not seeded/available locally. This is expected and not an environment fault.
+
+### Standard commands (defined in `package.json`)
+
+- Lint: `npm run lint` (currently reports a few pre-existing `react-hooks/set-state-in-effect`
+  errors in UI components — these are code issues, not environment issues).
+- Tests: `npm test` (vitest; configured for `tests/unit/**/*.test.ts` — no test files exist yet).
+- Build: `npm run build` (Next standalone output; succeeds).
+- Health check: `curl http://localhost:3000/api/health` returns DB + Redis status.
