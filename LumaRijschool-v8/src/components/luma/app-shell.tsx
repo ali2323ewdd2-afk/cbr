@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import {
   Sheet, SheetContent, SheetTrigger, SheetTitle,
 } from '@/components/ui/sheet'
+import { subscribeToNotifications } from '@/lib/realtime'
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -58,6 +59,13 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
       }
     })
   }, [pathname])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    return subscribeToNotifications(session.user.id, {
+      onNotification: () => setUnread((current) => current + 1),
+    })
+  }, [session?.user?.id])
 
   const SidebarContent = (
     <div className="flex flex-col h-full">

@@ -20,17 +20,30 @@ interface EmailLog {
   createdAt: string
 }
 
+interface EmailTemplate {
+  id: string
+  name: string
+  subject: string
+  html: string
+}
+
 export default function AdminEmailsPage() {
   const [history, setHistory] = useState<EmailLog[]>([])
+  const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [form, setForm] = useState({ audience: 'TEST', userId: '', testEmail: '', subject: '', html: '' })
 
   async function load() {
     setLoading(true)
-    const res = await fetch('/api/admin/emails?pageSize=25')
-    const data = (await res.json()) as { emails?: EmailLog[] }
+    const [emailsRes, templatesRes] = await Promise.all([
+      fetch('/api/admin/emails?pageSize=25'),
+      fetch('/api/admin/email-templates?pageSize=100'),
+    ])
+    const data = (await emailsRes.json()) as { emails?: EmailLog[] }
+    const templateData = (await templatesRes.json()) as { templates?: EmailTemplate[] }
     setHistory(data.emails ?? [])
+    setTemplates(templateData.templates ?? [])
     setLoading(false)
   }
 
@@ -68,6 +81,20 @@ export default function AdminEmailsPage() {
           <div className="font-display text-xl font-bold text-[#0B1B3B]">Email verzenden</div>
           <div className="text-sm text-slate-500">Verstuur naar iedereen, abonnees, één gebruiker of testadres.</div>
           <div className="mt-5 space-y-4">
+            <div>
+              <Label>Template</Label>
+              <select
+                value=""
+                onChange={(event) => {
+                  const template = templates.find((item) => item.id === event.target.value)
+                  if (template) setForm({ ...form, subject: template.subject, html: template.html })
+                }}
+                className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Kies template...</option>
+                {templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+              </select>
+            </div>
             <div>
               <Label>Audience</Label>
               <select value={form.audience} onChange={(event) => setForm({ ...form, audience: event.target.value })} className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm">

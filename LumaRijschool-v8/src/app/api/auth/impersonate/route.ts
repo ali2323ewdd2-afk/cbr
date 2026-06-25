@@ -30,7 +30,8 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL('/login?error=UserUnavailable', req.url))
   }
 
-  const secret = process.env.NEXTAUTH_SECRET || 'luma-rij-school-dev-secret-2026'
+  const secret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'luma-rij-school-dev-secret-2026')
+  if (!secret) return NextResponse.redirect(new URL('/login?error=ServerMisconfigured', req.url))
   const maxAge = 30 * 24 * 60 * 60
   const sessionToken = await encode({
     token: {

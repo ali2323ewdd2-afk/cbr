@@ -7,6 +7,11 @@ echo "════════════════════════�
 echo ""
 echo "[$(date)] Starting LumaRijschool production bootstrap..."
 
+if [ -z "$NEXTAUTH_SECRET" ]; then
+  echo "  ✗ FATAL: NEXTAUTH_SECRET is required in production."
+  exit 1
+fi
+
 # ─── Verify Prisma version ─────────────────────────────
 echo "[$(date)] [0/8] Verifying Prisma version..."
 PRISMA_VERSION=$(npx prisma --version 2>/dev/null | head -1 | grep -oP '\d+\.\d+\.\d+' | head -1)
@@ -96,9 +101,11 @@ echo "  ✓ All checks passed"
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
 echo "  LumaRijschool is ready!"
-echo "  Demo accounts:"
-echo "    Student: ahmed@email.nl / student123"
-echo "    Admin:   admin@lumarijschool.nl / admin123"
+if [ "$SHOW_DEMO_CREDENTIALS" = "true" ]; then
+  echo "  Demo accounts:"
+  echo "    Student: ahmed@email.nl / student123"
+  echo "    Admin:   admin@lumarijschool.nl / admin123"
+fi
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 

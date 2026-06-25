@@ -180,6 +180,10 @@ export async function handleStripeWebhook(payload: Buffer, signature: string) {
       const invoice = event.data.object as Stripe.Invoice
       const userId = invoice.metadata?.userId ?? (invoice.customer_email ? (await prisma.user.findUnique({ where: { email: invoice.customer_email } }))?.id : null)
       if (userId) {
+        if (invoice.id) {
+          const existing = await prisma.invoice.findFirst({ where: { stripeInvoiceId: invoice.id } })
+          if (existing) break
+        }
         await prisma.invoice.create({
           data: {
             userId,
@@ -200,6 +204,10 @@ export async function handleStripeWebhook(payload: Buffer, signature: string) {
       const invoice = event.data.object as Stripe.Invoice
       const userId = invoice.metadata?.userId
       if (userId) {
+        if (invoice.id) {
+          const existing = await prisma.invoice.findFirst({ where: { stripeInvoiceId: invoice.id } })
+          if (existing) break
+        }
         await prisma.invoice.create({
           data: {
             userId,

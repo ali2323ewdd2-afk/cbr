@@ -14,7 +14,7 @@ const BACKUP_DIR = process.env.BACKUP_DIR || '/app/backups'
 
 // ─── S3 client ──────────────────────────────────────────
 function getS3(): S3Client | null {
-  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) return null
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_S3_BUCKET) return null
   return new S3Client({
     region: process.env.AWS_REGION || 'eu-central-1',
     credentials: {

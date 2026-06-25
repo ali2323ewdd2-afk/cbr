@@ -54,6 +54,7 @@ services:
     volumes:
       - app_data:/app/data
       - app_backups:/app/backups
+      - app_uploads:/app/public/uploads
     networks:
       - luma-net
     expose:
@@ -100,6 +101,7 @@ services:
       - "443:443"
     volumes:
       - nginx_logs:/var/log/nginx
+      - ./certs:/etc/nginx/certs:ro
     networks:
       - luma-net
 
@@ -154,6 +156,7 @@ volumes:
   redis_data:
   app_data:
   app_backups:
+  app_uploads:
   nginx_logs:
 
 networks:

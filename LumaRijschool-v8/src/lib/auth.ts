@@ -2,6 +2,9 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { is2FAEnabled, verify2FA } from '@/lib/security'
+
+const authSecret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'luma-rij-school-dev-secret-2026')
 
 export const authOptions: NextAuthOptions = {
   // No adapter — we manage users manually with credentials provider.
@@ -15,6 +18,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'E-mail', type: 'email' },
         password: { label: 'Wachtwoord', type: 'password' },
+        token: { label: '2FA code', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
@@ -27,6 +31,12 @@ export const authOptions: NextAuthOptions = {
         if (user.banned) throw new Error('Je account is geblokkeerd.')
         const ok = await bcrypt.compare(credentials.password, user.passwordHash)
         if (!ok) return null
+        if (await is2FAEnabled(user.id)) {
+          const token = (credentials as Record<string, string | undefined>).token
+          if (!token) throw new Error('TWO_FACTOR_REQUIRED')
+          const valid2FA = await verify2FA(user.id, token)
+          if (!valid2FA) throw new Error('TWO_FACTOR_INVALID')
+        }
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
@@ -56,5 +66,5 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || 'luma-rij-school-dev-secret-2026',
+  secret: authSecret,
 }

@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [twoFA, setTwoFA] = useState<{ enabled: boolean; qrDataUrl?: string; secret?: string } | null>(null)
   const [show2FASetup, setShow2FASetup] = useState(false)
   const [twoFAToken, setTwoFAToken] = useState('')
+  const [twoFADisableToken, setTwoFADisableToken] = useState('')
   const [twoFALoading, setTwoFALoading] = useState(false)
 
   useEffect(() => {
@@ -220,17 +221,35 @@ export default function ProfilePage() {
                         <div className="font-semibold text-sm text-[#16A34A]">2FA is actief</div>
                         <div className="text-xs text-slate-600 mt-0.5">Je account is beveiligd met een authenticator app.</div>
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={async () => {
-                          await fetch('/api/security/2fa/disable', { method: 'POST' })
-                          setTwoFA({ enabled: false })
-                          toast.success('2FA uitgeschakeld')
-                        }}
-                        className="rounded-xl border-[#E4E7EE] text-[#EF4444] hover:text-[#EF4444]"
-                      >
-                        Uitschakelen
-                      </Button>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Input
+                          value={twoFADisableToken}
+                          onChange={(e) => setTwoFADisableToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="6-cijferige code"
+                          className="rounded-xl"
+                        />
+                        <Button
+                          variant="outline"
+                          disabled={twoFADisableToken.length !== 6}
+                          onClick={async () => {
+                            const res = await fetch('/api/security/2fa/disable', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ token: twoFADisableToken }),
+                            })
+                            if (res.ok) {
+                              setTwoFA({ enabled: false })
+                              setTwoFADisableToken('')
+                              toast.success('2FA uitgeschakeld')
+                            } else {
+                              toast.error('Ongeldige code')
+                            }
+                          }}
+                          className="rounded-xl border-[#E4E7EE] text-[#EF4444] hover:text-[#EF4444]"
+                        >
+                          Uitschakelen
+                        </Button>
+                      </div>
                     </div>
                   ) : show2FASetup ? (
                     <div className="rounded-2xl bg-[#F4F7FB] p-4 space-y-3">

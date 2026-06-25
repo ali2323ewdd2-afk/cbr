@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { awardXp, updateStreak, checkProgressAchievements } from '@/lib/gamification/engine'
+import { hasActiveSubscription } from '@/lib/payment/stripe'
 
 export async function POST(
   req: Request,
@@ -14,6 +15,12 @@ export async function POST(
 
   const body = await req.json().catch(() => ({}))
   const { status, watchSec, positionSec, notesPrivate } = body
+
+  const lesson = await prisma.lesson.findUnique({ where: { id }, select: { id: true, isFree: true, isPublished: true } })
+  if (!lesson || !lesson.isPublished) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!lesson.isFree && !(await hasActiveSubscription(session.user.id))) {
+    return NextResponse.json({ error: 'Subscription required' }, { status: 402 })
+  }
 
   const existing = await prisma.lessonProgress.findUnique({
     where: { userId_lessonId: { userId: session.user.id, lessonId: id } },

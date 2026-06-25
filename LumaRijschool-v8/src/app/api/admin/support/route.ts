@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const session = await requireAdmin()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const url = new URL(req.url)
-  const status = url.searchParams.get('status') || 'OPEN'
+  const status = url.searchParams.get('status') || 'ALL'
   const where: any = {}
   if (status !== 'ALL') where.status = status
   const tickets = await prisma.supportTicket.findMany({

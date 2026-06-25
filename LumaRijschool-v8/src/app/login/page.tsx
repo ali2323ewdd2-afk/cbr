@@ -18,15 +18,27 @@ function LoginForm() {
   const from = params.get('from') || '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [token, setToken] = useState('')
+  const [requires2FA, setRequires2FA] = useState(false)
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const res = await signIn('credentials', { email, password, redirect: false })
+    const res = await signIn('credentials', { email, password, token, redirect: false })
     setLoading(false)
     if (res?.error) {
+      if (res.error.includes('TWO_FACTOR_REQUIRED')) {
+        setRequires2FA(true)
+        toast.error('Voer je 2FA-code in.')
+        return
+      }
+      if (res.error.includes('TWO_FACTOR_INVALID')) {
+        setRequires2FA(true)
+        toast.error('Ongeldige 2FA-code.')
+        return
+      }
       toast.error('Onjuist e-mailadres of wachtwoord.')
       return
     }
@@ -50,6 +62,20 @@ function LoginForm() {
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                 className="mt-1.5 rounded-xl h-11" placeholder="ahmed@email.nl" />
             </div>
+            {requires2FA && (
+              <div>
+                <Label htmlFor="token" className="text-xs font-semibold text-slate-700">2FA-code</Label>
+                <Input
+                  id="token"
+                  inputMode="numeric"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="mt-1.5 rounded-xl h-11"
+                  placeholder="123456"
+                  required
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="password" className="text-xs font-semibold text-slate-700">Wachtwoord</Label>
               <div className="relative mt-1.5">
@@ -68,11 +94,13 @@ function LoginForm() {
           <div className="text-xs text-center text-slate-500 mt-4">
             Nog geen account? <Link href="/register" className="text-[#2563EB] font-semibold">Maak gratis account</Link>
           </div>
-          <div className="mt-5 rounded-2xl bg-[#F4F7FB] p-3 text-xs text-slate-600">
-            <div className="font-semibold text-[#0B1B3B] mb-1">Demo accounts:</div>
-            <div>👨‍🎓 Student: <code>ahmed@email.nl</code> / <code>student123</code></div>
-            <div>🛠️ Admin: <code>admin@lumarijschool.nl</code> / <code>admin123</code></div>
-          </div>
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="mt-5 rounded-2xl bg-[#F4F7FB] p-3 text-xs text-slate-600">
+              <div className="font-semibold text-[#0B1B3B] mb-1">Demo accounts:</div>
+              <div>👨‍🎓 Student: <code>ahmed@email.nl</code> / <code>student123</code></div>
+              <div>🛠️ Admin: <code>admin@lumarijschool.nl</code> / <code>admin123</code></div>
+            </div>
+          )}
         </Card>
       </div>
     </div>

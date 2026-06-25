@@ -41,6 +41,7 @@ const ADMIN_ONLY_PATHS = [
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const authSecret = process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'luma-rij-school-dev-secret-2026')
 
   // Allow public files
   if (
@@ -51,6 +52,10 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/plans') ||
     pathname.startsWith('/api/guest') ||
     pathname.startsWith('/api/health') ||
+    pathname.startsWith('/api/faq') ||
+    pathname.startsWith('/api/traffic-signs') ||
+    pathname.startsWith('/api/popular-searches') ||
+    pathname.startsWith('/api/gamification/ranks') ||
     pathname.startsWith('/api/payments/webhook') ||
     pathname.startsWith('/api/payments/success') ||
     pathname.startsWith('/api/announcements') ||
@@ -77,7 +82,7 @@ export async function middleware(req: NextRequest) {
 
   const token = await getToken({
     req,
-    secret: process.env.NEXTAUTH_SECRET || 'luma-rij-school-dev-secret-2026',
+    secret: authSecret,
   })
 
   // Maintenance mode check (only for non-admins)

@@ -12,11 +12,12 @@ import {
 } from '@/lib/admin-api'
 
 const patchSchema = z.object({
-  action: z.enum(['BAN', 'UNBAN', 'DISABLE', 'ENABLE', 'DELETE', 'EXTEND_SUB', 'UPDATE_PROFILE', 'CHANGE_PASSWORD']).optional(),
+  action: z.enum(['BAN', 'UNBAN', 'DISABLE', 'ENABLE', 'DELETE', 'EXTEND_SUB', 'UPDATE_PROFILE', 'CHANGE_PASSWORD', 'CHANGE_ROLE']).optional(),
   name: z.string().trim().max(160).optional().nullable(),
   email: z.string().email().optional(),
   phone: z.string().trim().max(40).optional().nullable(),
   password: z.string().min(8).max(200).optional(),
+  role: z.enum(['STUDENT', 'SUPPORT', 'ADMIN']).optional(),
 })
 
 const safeUserSelect = {
@@ -127,6 +128,15 @@ export async function PATCH(
         data: { actorId: session.user.id, action: 'USER_PASSWORD_CHANGED', entity: 'User', entityId: id },
       })
       return NextResponse.json({ ok: true })
+    }
+    if (action === 'CHANGE_ROLE') {
+      if (session.user.role !== 'ADMIN') return forbiddenResponse()
+      if (!parsed.data.role) return badRequestResponse('Role is required')
+      const user = await prisma.user.update({ where: { id }, data: { role: parsed.data.role }, select: safeUserSelect })
+      await prisma.auditLog.create({
+        data: { actorId: session.user.id, action: 'USER_ROLE_CHANGED', entity: 'User', entityId: id },
+      })
+      return NextResponse.json({ user })
     }
 
     const user = await prisma.user.update({

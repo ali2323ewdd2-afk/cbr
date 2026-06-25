@@ -23,6 +23,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const download = url.searchParams.get('download')
   if (download) {
+    const adminSession = await requireAdminOnlySession()
+    if (!adminSession) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const filepath = backupPath(download)
     if (!existsSync(filepath)) return NextResponse.json({ error: 'Backup not found' }, { status: 404 })
     const stream = Readable.toWeb(createReadStream(filepath)) as ReadableStream

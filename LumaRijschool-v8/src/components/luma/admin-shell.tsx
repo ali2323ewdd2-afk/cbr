@@ -56,6 +56,24 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
   const router = useRouter()
   const { data: session } = useSession()
   const [open, setOpen] = useState(false)
+  const [liveCount, setLiveCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadLiveCount() {
+      if (!session?.user?.id) return
+      const response = await fetch('/api/admin/live').catch(() => null)
+      if (!response?.ok) return
+      const data = await response.json().catch(() => null) as { count?: number } | null
+      if (!cancelled && typeof data?.count === 'number') setLiveCount(data.count)
+    }
+    void loadLiveCount()
+    const interval = window.setInterval(loadLiveCount, 30000)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [session?.user?.id])
 
   const SidebarContent = (
     <div className="flex flex-col h-full">
@@ -131,7 +149,7 @@ export function AdminShell({ children, title }: { children: React.ReactNode; tit
           <h1 className="font-display font-bold text-xl text-[#0B1B3B]">{title}</h1>
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center gap-1.5 rounded-xl bg-[#ECFDF3] text-[#16A34A] px-3 py-1.5 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1FB871] animate-pulse-soft" /> 342 online
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1FB871] animate-pulse-soft" /> {liveCount ?? 0} online
             </div>
             <Link href="/dashboard">
               <Button variant="outline" size="sm" className="rounded-xl border-[#E4E7EE]">Naar app</Button>

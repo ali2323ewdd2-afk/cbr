@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { hasActiveSubscription } from '@/lib/payment/stripe'
 
 export async function GET(
   _req: Request,
@@ -31,17 +32,14 @@ export async function GET(
     return NextResponse.json({ error: 'Subscription required', lesson: { id: lesson.id, title: lesson.title, isFree: false } }, { status: 402 })
   }
 
-  return NextResponse.json({ lesson, hasAccess: true })
-}
-
-// Local import to avoid circular
-async function hasActiveSubscription(userId: string) {
-  const sub = await prisma.subscription.findUnique({ where: { userId } })
-  if (!sub) return false
-  if (sub.status !== 'ACTIVE') return false
-  if (sub.expiresAt < new Date()) {
-    await prisma.subscription.update({ where: { id: sub.id }, data: { status: 'EXPIRED' } })
-    return false
-  }
-  return true
+  return NextResponse.json({
+    lesson: {
+      ...lesson,
+      questions: lesson.questions.map((question) => ({
+        ...question,
+        options: question.options.map(({ isCorrect: _isCorrect, ...option }) => option),
+      })),
+    },
+    hasAccess: true,
+  })
 }

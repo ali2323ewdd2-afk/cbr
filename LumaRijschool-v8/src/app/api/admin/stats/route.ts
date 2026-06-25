@@ -32,12 +32,9 @@ export async function GET() {
     examsTaken,
   ] = await Promise.all([
     prisma.user.count({ where: { role: 'STUDENT' } }),
-    prisma.subscription.count({ where: { status: 'ACTIVE' } }),
-    prisma.user.count({
-      where: {
-        role: 'STUDENT',
-        createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
-      },
+    prisma.subscription.count({ where: { status: 'ACTIVE', expiresAt: { gte: now } } }),
+    prisma.guest.count({
+      where: { createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } },
     }),
     prisma.examAttempt.count({
       where: { status: 'COMPLETED', passed: true, finishedAt: { gte: startOfWeek } },
@@ -66,8 +63,8 @@ export async function GET() {
   ])
 
   // Pass rate
-  const totalAttempts = await prisma.examAttempt.count({ where: { status: 'COMPLETED' } })
-  const passRate = totalAttempts > 0 ? Math.round((passedThisWeek / Math.max(1, totalAttempts)) * 100) : 0
+  const attemptsThisWeek = await prisma.examAttempt.count({ where: { status: 'COMPLETED', finishedAt: { gte: startOfWeek } } })
+  const passRate = attemptsThisWeek > 0 ? Math.round((passedThisWeek / attemptsThisWeek) * 100) : 0
 
   // Subscription conversion
   const conversionRate = totalUsers > 0 ? Math.round((activeSubscriptions / totalUsers) * 100) : 0

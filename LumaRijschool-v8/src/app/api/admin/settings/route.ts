@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { forbiddenResponse, requireAdminOnlySession } from '@/lib/admin-api'
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPPORT')) return null
-  return session
-}
 
 const ALLOWED_SETTINGS = new Set([
   'SITE_NAME',
@@ -35,9 +27,12 @@ const ALLOWED_SETTINGS = new Set([
 ])
 
 export async function GET() {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const settings = await prisma.systemSetting.findMany({ orderBy: { category: 'asc' } })
+  const session = await requireAdminOnlySession()
+  if (!session) return forbiddenResponse()
+  const settings = await prisma.systemSetting.findMany({
+    where: { category: { not: 'IMPERSONATE' } },
+    orderBy: { category: 'asc' },
+  })
   // Group by category
   const grouped: Record<string, Record<string, string>> = {}
   for (const s of settings) {

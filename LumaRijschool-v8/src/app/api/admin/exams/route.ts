@@ -138,11 +138,9 @@ export async function PATCH(req: Request) {
 
   try {
     const { id, questionIds, randomQuestions, ...data } = parsed.data
-    const resolvedQuestionIds = await resolveQuestionIds({
-      randomQuestions,
-      questionCount: data.questionCount,
-      questionIds,
-    })
+    const resolvedQuestionIds = questionIds !== undefined
+      ? await resolveQuestionIds({ randomQuestions, questionCount: data.questionCount, questionIds })
+      : []
     const exam = await prisma.$transaction(async (tx) => {
       const updated = await tx.exam.update({
         where: { id },
@@ -159,7 +157,7 @@ export async function PATCH(req: Request) {
           ...(data.tags !== undefined ? { tags: JSON.stringify(data.tags) } : {}),
         },
       })
-      if (questionIds !== undefined || randomQuestions) {
+      if (questionIds !== undefined) {
         await tx.examQuestion.deleteMany({ where: { examId: id } })
         if (resolvedQuestionIds.length > 0) {
           await tx.examQuestion.createMany({

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { AdminShell } from '@/components/luma/admin-shell'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,7 +37,7 @@ export default function AdminUsersPage() {
   const [status, setStatus] = useState('all')
   const [loading, setLoading] = useState(true)
   const [actionUser, setActionUser] = useState<UserRow | null>(null)
-  const [profile, setProfile] = useState({ name: '', email: '', phone: '', password: '' })
+  const [profile, setProfile] = useState({ name: '', email: '', phone: '', password: '', role: 'STUDENT' })
   const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', role: 'STUDENT' })
   const pageSize = 15
 
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
 
   function openUser(user: UserRow) {
     setActionUser(user)
-    setProfile({ name: user.name ?? '', email: user.email, phone: user.phone ?? '', password: '' })
+    setProfile({ name: user.name ?? '', email: user.email, phone: user.phone ?? '', password: '', role: user.role })
   }
 
   async function doAction(action: 'BAN' | 'UNBAN' | 'DELETE' | 'EXTEND_SUB') {
@@ -108,6 +109,21 @@ export default function AdminUsersPage() {
       setProfile({ ...profile, password: '' })
     } else {
       toast.error('Wachtwoord wijzigen mislukt')
+    }
+  }
+
+  async function changeRole() {
+    if (!actionUser) return
+    const res = await fetch(`/api/admin/users/${actionUser.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'CHANGE_ROLE', role: profile.role }),
+    })
+    if (res.ok) {
+      toast.success('Rol gewijzigd')
+      await loadUsers()
+    } else {
+      toast.error('Rol wijzigen mislukt')
     }
   }
 
@@ -208,7 +224,7 @@ export default function AdminUsersPage() {
                           {(u.name ?? 'S')[0]}
                         </div>
                         <div>
-                          <div className="font-semibold text-sm text-[#0B1B3B]">{u.name ?? 'Naamloos'} {u.banned && <span className="text-[#EF4444]">(geblokkeerd)</span>}</div>
+                          <Link href={`/admin/users/${u.id}`} className="font-semibold text-sm text-[#2563EB] hover:underline">{u.name ?? 'Naamloos'} {u.banned && <span className="text-[#EF4444]">(geblokkeerd)</span>}</Link>
                           <div className="text-xs text-slate-500">{u.email} · {u.phone ?? 'geen telefoon'} · {u.role}</div>
                         </div>
                       </div>
@@ -245,6 +261,12 @@ export default function AdminUsersPage() {
                               <Input value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} placeholder="Email" className="rounded-xl" />
                               <Input value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} placeholder="Telefoon" className="rounded-xl" />
                               <Button variant="outline" onClick={() => void saveProfile()} className="w-full justify-start rounded-xl">Profiel opslaan</Button>
+                              <select value={profile.role} onChange={(event) => setProfile({ ...profile, role: event.target.value })} className="rounded-xl border border-input bg-background px-3 py-2 text-sm">
+                                <option value="STUDENT">Student</option>
+                                <option value="SUPPORT">Support</option>
+                                <option value="ADMIN">Admin</option>
+                              </select>
+                              <Button variant="outline" onClick={() => void changeRole()} className="w-full justify-start rounded-xl">Rol wijzigen</Button>
                               <Input value={profile.password} onChange={(event) => setProfile({ ...profile, password: event.target.value })} placeholder="Nieuw wachtwoord" type="password" className="rounded-xl" />
                               <Button variant="outline" onClick={() => void changePassword()} className="w-full justify-start rounded-xl">Wachtwoord wijzigen</Button>
                               <Button variant="outline" onClick={() => void loginAs(u)} className="w-full justify-start rounded-xl">Login as gebruiker</Button>

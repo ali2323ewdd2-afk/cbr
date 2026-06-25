@@ -10,18 +10,28 @@ import Link from 'next/link'
 export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState('ALL')
 
   useEffect(() => {
-    fetch('/api/admin/support').then((r) => r.json()).then((d) => {
+    fetch(`/api/admin/support?status=${status}`).then((r) => r.json()).then((d) => {
       setTickets(d.tickets || [])
       setLoading(false)
     })
-  }, [])
+  }, [status])
 
   return (
     <AdminShell title="Support Tickets">
       <Card className="rounded-3xl border-[#E4E7EE] shadow-card p-6">
-        <div className="font-display font-bold text-lg text-[#0B1B3B] mb-4">Alle support tickets</div>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="font-display font-bold text-lg text-[#0B1B3B]">Alle support tickets</div>
+          <select value={status} onChange={(event) => { setLoading(true); setStatus(event.target.value) }} className="rounded-xl border border-[#E4E7EE] px-3 py-2 text-sm">
+            <option value="ALL">Alle statussen</option>
+            <option value="OPEN">Open</option>
+            <option value="ANSWERED">Answered</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+        </div>
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#2563EB]" /></div>
         ) : (

@@ -33,6 +33,7 @@ Do **not** commit `.env.production` with real secrets.
 | `PORT` | Next.js app port inside container. | Yes | `3000` | Integer, normally `3000` |
 | `NEXTAUTH_URL` | Public canonical URL used by NextAuth, redirects, emails, cookies. | Yes | `https://rijschool.example.com` | Full HTTPS origin, no trailing slash |
 | `NEXTAUTH_SECRET` | Signs/encrypts NextAuth JWT/session cookies and impersonation tokens. | Yes | `CHANGE_ME_RANDOM_32_BYTE_OR_LONGER_SECRET` | Strong random secret, 32+ bytes |
+| `SHOW_DEMO_CREDENTIALS` | Shows demo credentials in logs/UI when explicitly enabled. | Optional | `false` | `true` or `false`; keep `false` in production |
 | `POSTGRES_USER` | PostgreSQL username created by postgres container. | Yes | `luma` | Plain username |
 | `POSTGRES_PASSWORD` | PostgreSQL password. | Yes | `CHANGE_ME_STRONG_DATABASE_PASSWORD` | Strong password; URL-encode if manually used in URLs |
 | `POSTGRES_DB` | PostgreSQL database name. | Yes | `lumarijschool` | Database identifier |
@@ -104,7 +105,18 @@ Admin media uploads are stored under:
 public/uploads/admin
 ```
 
-In multi-instance deployments, mount that path to persistent shared storage or move `src/lib/media-storage.ts` to object storage.
+Docker Compose mounts `app_uploads` to `/app/public/uploads` so uploaded files survive app container replacement.
+
+SSL certificates should be placed on the host under:
+
+```text
+./certs/fullchain.pem
+./certs/privkey.pem
+```
+
+Docker Compose mounts `./certs` read-only to `/etc/nginx/certs`, and nginx auto-enables HTTPS when both files exist.
+
+In multi-instance deployments, use shared storage for uploads or move `src/lib/media-storage.ts` to object storage.
 
 ## CI / GitHub Actions variables
 
@@ -125,6 +137,7 @@ Used by application/runtime:
 
 - `NODE_ENV`
 - `PORT`
+- `SHOW_DEMO_CREDENTIALS`
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - `DATABASE_URL`
@@ -135,6 +148,10 @@ Used by application/runtime:
 - `REDIS_URL`
 - `REDIS_HOST`
 - `WS_PORT`
+
+Operational config file:
+
+- `.z-ai-config` may be required by `z-ai-web-dev-sdk` depending on your AI provider setup. It is intentionally not committed and should be mounted/provided by deployment automation if the AI tutor is enabled.
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_WEEK`

@@ -20,6 +20,7 @@ The real `.env.production` file must be created on the deployment server by copy
 - `PORT`
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
+- `SHOW_DEMO_CREDENTIALS`
 
 ### Database / Prisma / PostgreSQL
 
@@ -96,6 +97,7 @@ All direct environment variable references found in source/config are documented
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `WS_PORT`
+- `SHOW_DEMO_CREDENTIALS`
 
 ## Documented but not currently read directly by source code
 
@@ -106,6 +108,10 @@ It is included for operational completeness and future/client Stripe flows, but 
 ## Missing variables
 
 No direct `process.env.*` or Docker Compose variables were found missing from the documentation/templates after this update.
+
+Operational config note:
+
+- `.z-ai-config` is not an environment variable, but may be required by the AI SDK. It is documented in `DEPLOYMENT_ENVIRONMENT_GUIDE.md`.
 
 ## Deployment blockers
 

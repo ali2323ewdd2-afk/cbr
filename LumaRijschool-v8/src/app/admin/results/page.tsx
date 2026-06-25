@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AdminShell } from '@/components/luma/admin-shell'
@@ -85,7 +86,7 @@ export default function AdminResultsPage() {
                 <tbody>{results.map((result) => (
                   <tr key={result.id} className="border-b border-[#E4E7EE]/60 last:border-0">
                     <td className="py-3 text-sm font-semibold text-[#0B1B3B]">{result.user.name ?? result.user.email}</td>
-                    <td className="py-3 text-sm">{result.exam.title}</td>
+                    <td className="py-3 text-sm"><Link href={`/admin/results/${result.id}`} className="font-semibold text-[#2563EB] hover:underline">{result.exam.title}</Link></td>
                     <td className="py-3"><Badge className={result.passed ? 'border-0 bg-[#ECFDF3] text-[#16A34A]' : 'border-0 bg-[#FEF2F2] text-[#EF4444]'}>{Math.round(result.score * 100)}%</Badge></td>
                     <td className="py-3 text-sm">{result.correctCount} / {result.totalQuestions - result.correctCount}</td>
                     <td className="py-3 text-sm">{Math.round(result.durationSec / 60)} min</td>

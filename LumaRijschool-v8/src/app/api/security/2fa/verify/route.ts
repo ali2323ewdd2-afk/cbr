@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { enable2FA } from '@/lib/security'
-import { toast } from 'sonner'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)

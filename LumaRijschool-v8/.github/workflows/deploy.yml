@@ -53,13 +53,13 @@ jobs:
             ${{ secrets.DOCKER_REGISTRY }}/lumarijschool-ws:latest
             ${{ secrets.DOCKER_REGISTRY }}/lumarijschool-ws:${{ github.sha }}
 
-      - name: Copy docker-compose.yml to server
+      - name: Copy deployment files to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.yml,nginx.conf,Dockerfile,Dockerfile.ws,scripts/entrypoint.sh"
+          source: "."
           target: "/opt/lumarijschool/"
 
       - name: Deploy on server
@@ -70,21 +70,21 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /opt/lumarijschool
-            # Pull latest images
-            docker compose pull
-            # Start services (entrypoint handles migrations, seeds, RBAC automatically)
-            docker compose up -d
+            test -f .env.production || { echo "Missing .env.production. Copy .env.production.example and configure secrets first."; exit 1; }
+            docker compose --env-file .env.production config >/dev/null
+            # Build and start services (entrypoint handles migrations, seeds, RBAC automatically)
+            docker compose --env-file .env.production up -d --build
             # Wait for healthcheck
             echo "Waiting for app to be healthy..."
             for i in {1..60}; do
-              if curl -sf http://localhost:3000/api/health | grep -q '"ok":true'; then
+              if curl -sf http://localhost/api/health | grep -q '"ok":true'; then
                 echo "✓ App is healthy"
                 break
               fi
               sleep 5
             done
             # Verify
-            curl -sf http://localhost:3000/api/health | python3 -m json.tool
+            curl -sf http://localhost/api/health | python3 -m json.tool
             echo "✓ Deploy complete!"
 
       - name: Notify deployment

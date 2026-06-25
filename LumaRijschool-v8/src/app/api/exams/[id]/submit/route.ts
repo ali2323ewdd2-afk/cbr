@@ -55,18 +55,29 @@ export async function POST(
     const isCorrect = JSON.stringify(correctKeys) === JSON.stringify(selectedSorted)
     if (isCorrect) correct++
 
-    // Save answer
-    await prisma.answer.create({
-      data: {
-        userId: session.user.id,
-        questionId: eq.question.id,
-        attemptId: attempt.id,
-        selectedKeys: JSON.stringify(ans.selectedKeys),
-        isCorrect,
-        timeMs: ans.timeMs ?? 0,
-        marked: ans.marked ?? false,
-      },
+    // Save answer without duplicating autosaved rows.
+    const existingAnswer = await prisma.answer.findFirst({
+      where: { attemptId: attempt.id, questionId: eq.question.id },
+      select: { id: true },
     })
+    const answerData = {
+      selectedKeys: JSON.stringify(ans.selectedKeys),
+      isCorrect,
+      timeMs: ans.timeMs ?? 0,
+      marked: ans.marked ?? false,
+    }
+    if (existingAnswer) {
+      await prisma.answer.update({ where: { id: existingAnswer.id }, data: answerData })
+    } else {
+      await prisma.answer.create({
+        data: {
+          userId: session.user.id,
+          questionId: eq.question.id,
+          attemptId: attempt.id,
+          ...answerData,
+        },
+      })
+    }
 
     // Update category
     const tName = eq.question.topic.name

@@ -24,7 +24,7 @@ const httpServer = createServer((req, res) => {
 
 const io = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
-  path: '/',
+  path: '/socket.io',
 })
 
 // Redis subscriber
