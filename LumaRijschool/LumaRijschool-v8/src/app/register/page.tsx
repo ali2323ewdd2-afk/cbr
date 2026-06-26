@@ -60,12 +60,17 @@ function RegisterForm() {
     setLoading(false)
     if (r?.error) { toast.error('Login mislukt. Ga naar inloggen.'); router.push('/login'); return }
     if (planSlug === 'MONTH' || planSlug === 'WEEK') {
-      const r2 = await fetch('/api/payments/checkout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planSlug }),
-      })
-      const data = await r2.json()
-      if (data.url) { window.location.href = data.url; return }
+      try {
+        const r2 = await fetch('/api/payments/checkout', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planSlug }),
+        })
+        const data = await r2.json().catch(() => ({}))
+        if (r2.ok && data.url) { window.location.href = data.url; return }
+        toast.error(data.error || 'Kon de betaalpagina niet openen. Je kunt later upgraden.')
+      } catch {
+        toast.error('Kon de betaalpagina niet openen. Je kunt later upgraden.')
+      }
     }
     router.push('/dashboard')
     router.refresh()
