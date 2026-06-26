@@ -100,6 +100,10 @@ services:
       - "443:443"
     volumes:
       - nginx_logs:/var/log/nginx
+      # Drop fullchain.pem + privkey.pem here to auto-enable HTTPS (see nginx-entrypoint.sh).
+      - ./certs:/etc/nginx/certs:ro
+      # Shared webroot for the Let's Encrypt HTTP-01 challenge (certbot writes here).
+      - ./certbot/www:/var/www/certbot
     networks:
       - luma-net
 
