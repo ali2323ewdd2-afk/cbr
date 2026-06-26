@@ -1,0 +1,165 @@
+services:
+  # ─── PostgreSQL Database ──────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: lumarijschool-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-luma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-luma_password}
+      POSTGRES_DB: ${POSTGRES_DB:-lumarijschool}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - luma-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-luma} -d ${POSTGRES_DB:-lumarijschool}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis Cache ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: lumarijschool-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - luma-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Next.js Frontend + Backend ───────────────────────
+  app:
+    build: .
+    container_name: lumarijschool-app
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-luma}:${POSTGRES_PASSWORD:-luma_password}@postgres:5432/${POSTGRES_DB:-lumarijschool}?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ws:
+        condition: service_started
+    volumes:
+      - app_data:/app/data
+      - app_backups:/app/backups
+    networks:
+      - luma-net
+    expose:
+      - "3000"
+
+  # ─── WebSocket Mini-Service (Socket.io) ───────────────
+  ws:
+    build:
+      context: .
+      dockerfile: Dockerfile.ws
+    container_name: lumarijschool-ws
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-luma}:${POSTGRES_PASSWORD:-luma_password}@postgres:5432/${POSTGRES_DB:-lumarijschool}?schema=public
+      REDIS_URL: redis://redis:6379
+      WS_PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - luma-net
+    expose:
+      - "3001"
+
+  # ─── Nginx Reverse Proxy ─────────────────────────────
+  # Works WITHOUT SSL by default (HTTP on port 80).
+  # If you place fullchain.pem + privkey.pem in ./certs/ before starting,
+  # HTTPS is enabled automatically on port 443.
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: lumarijschool-nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+      - ws
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx_logs:/var/log/nginx
+      # Drop fullchain.pem + privkey.pem here to auto-enable HTTPS (see nginx-entrypoint.sh).
+      - ./certs:/etc/nginx/certs:ro
+      # Shared webroot for the Let's Encrypt HTTP-01 challenge (certbot writes here).
+      - ./certbot/www:/var/www/certbot
+    networks:
+      - luma-net
+
+  # ─── Adminer (Database GUI) ───────────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: lumarijschool-adminer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - luma-net
+    expose:
+      - "8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+  # ─── Backup Service (cron) ────────────────────────────
+  backup:
+    image: postgres:16-alpine
+    container_name: lumarijschool-backup
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-luma}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-luma_password}
+      PGDATABASE: ${POSTGRES_DB:-lumarijschool}
+      BACKUP_DIR: /backups
+      RETENTION_DAYS: 30
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - app_backups:/backups
+    entrypoint: |
+      sh -c "
+        apk add --no-cache dcron;
+        echo '0 2 * * * pg_dump --format=custom --file=/backups/daily-$$(date +\%Y\%m\%d).dump > /var/log/cron.log 2>&1' > /etc/crontabs/root;
+        echo '0 3 * * 0 pg_dump --format=custom --file=/backups/weekly-$$(date +\%Y\%m\%d).dump > /var/log/cron.log 2>&1' >> /etc/crontabs/root;
+        echo '0 4 1 * * pg_dump --format=custom --file=/backups/monthly-$$(date +\%Y\%m\%d).dump > /var/log/cron.log 2>&1' >> /etc/crontabs/root;
+        echo '30 2 * * * find /backups -name \"daily-*.dump\" -mtime +7 -delete' >> /etc/crontabs/root;
+        echo '30 3 * * 0 find /backups -name \"weekly-*.dump\" -mtime +28 -delete' >> /etc/crontabs/root;
+        echo '30 4 1 * * find /backups -name \"monthly-*.dump\" -mtime +90 -delete' >> /etc/crontabs/root;
+        crond -f -l 8
+      "
+    networks:
+      - luma-net
+
+volumes:
+  pg_data:
+  redis_data:
+  app_data:
+  app_backups:
+  nginx_logs:
+
+networks:
+  luma-net:
+    driver: bridge
