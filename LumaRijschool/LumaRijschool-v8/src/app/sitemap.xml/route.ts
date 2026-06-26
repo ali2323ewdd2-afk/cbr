@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { generateSitemap } from '@/lib/seo'
-import { prisma } from '@/lib/prisma'
+import { getBaseUrl } from '@/lib/base-url'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
-  const origin = new URL(req.url).origin
+  const origin = getBaseUrl(req)
   const xml = await generateSitemap(origin)
   return new NextResponse(xml, {
     headers: {
