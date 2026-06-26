@@ -60,6 +60,14 @@ nginx, adminer, backup. Verified working caveats:
   fix). Reach the app through nginx on host port 80 (e.g. `curl http://localhost/api/health`).
 - nginx serves the app even when the optional `adminer` service is down (`/adminer/`
   returns 502 only); `/adminer/` returns 200 when adminer is up.
+- HTTPS: nginx mounts `./certs` (TLS) and `./certbot/www` (ACME webroot). Drop
+  `fullchain.pem` + `privkey.pem` into `./certs` and `nginx-entrypoint.sh` auto-switches to
+  the SSL config (HTTP→HTTPS 301, HSTS, HTTP/2, www→non-www). With no certs it serves HTTP
+  only. A real cert needs public DNS for `lumatheorie.nl` + certbot; verified locally with a
+  self-signed cert. `./certs`, `./certbot`, `.env`, `.env.production` are git-ignored.
+- Seeders are idempotent — the entrypoint re-seeds on every start without duplicate-key
+  errors. See `PRODUCTION_AUDIT_v9.md` for the full audit + known follow-ups (real-time
+  Socket.io path mismatch, CSP, raster OG image).
 
 ### Environment file (important)
 
