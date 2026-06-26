@@ -37,6 +37,7 @@ defects.
 | 7 | Seeders | Demo-student badges/lesson-progress/notifications/XP made idempotent — re-seeding no longer logs duplicate-key errors. |
 | 8 | Deploy | Nginx now mounts `./certs` (TLS) and `./certbot/www` (ACME webroot) so HTTPS/Let's Encrypt can actually be wired up. |
 | 9 | Robustness | Checkout route always returns JSON (503 on failure); register page handles non-OK checkout — fixes white-screen `Unexpected end of JSON input` crash. |
+| 10 | Real-time | Socket.io path unified to `/socket.io/` (client + server + nginx) — real-time delivery now works end-to-end (was previously broken through nginx). |
 
 (Earlier v9 work, already on this branch: HOSTNAME=0.0.0.0 Docker fix, seeder `process.exit`, RBAC seeder rewrite, domain → lumatheorie.nl, SEO metadata, lint cleanup.)
 
@@ -146,8 +147,12 @@ validation); protected (`/api/lessons`, `/api/gamification/me`, `/api/notificati
 - **SMTP creds** — email currently logs to console in dev; set SMTP_* for real delivery.
 - **Cross-browser/mobile** — verified in Chrome (desktop). Firefox/Safari/Edge and physical
   mobile/tablet were not available in this environment.
-- **Real-time (Socket.io)** — server (`path:'/'`), client (`path:'/'`) and the Nginx route
-  (`/socket.io/`) are inconsistent; real-time delivery needs a coordinated path fix + browser
-  socket testing. Left as a documented follow-up.
-- **CSP header** — recommended (see §7).
-- Host: set `vm.overcommit_memory=1` for Redis.
+- **CSP header** — recommended (see §7); not applied because a correct nonce-based policy
+  for Next.js/Tailwind needs per-page testing to avoid breaking inline styles/scripts.
+
+### Resolved during this audit (previously listed as follow-ups)
+- **Real-time (Socket.io)** — FIXED. Client/server/nginx now agree on `/socket.io/`. Verified
+  end-to-end: a client connected through nginx (TLS) receives a `notification` published to
+  Redis (`scripts/ws-e2e-check.mjs`). App → Redis → ws → Socket.io → client all confirmed.
+- **Redis `vm.overcommit_memory`** — set to `1` on the audit host; persist on the prod host
+  with `echo 'vm.overcommit_memory = 1' | sudo tee -a /etc/sysctl.conf`.

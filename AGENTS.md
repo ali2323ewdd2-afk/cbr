@@ -66,8 +66,11 @@ nginx, adminer, backup. Verified working caveats:
   only. A real cert needs public DNS for `lumatheorie.nl` + certbot; verified locally with a
   self-signed cert. `./certs`, `./certbot`, `.env`, `.env.production` are git-ignored.
 - Seeders are idempotent — the entrypoint re-seeds on every start without duplicate-key
-  errors. See `PRODUCTION_AUDIT_v9.md` for the full audit + known follow-ups (real-time
-  Socket.io path mismatch, CSP, raster OG image).
+  errors. See `PRODUCTION_AUDIT_v9.md` for the full audit.
+- Real-time uses Socket.io on the `/socket.io/` path (client `src/lib/realtime.ts`, server
+  `mini-services/ws`, nginx `location /socket.io/`). Keep these in sync. The app publishes to
+  Redis channels (`notifications:all` / `notifications:user` / `system:announcement`) and the
+  ws service relays them. `scripts/ws-e2e-check.mjs` is an ad-hoc end-to-end checker.
 
 ### Environment file (important)
 
