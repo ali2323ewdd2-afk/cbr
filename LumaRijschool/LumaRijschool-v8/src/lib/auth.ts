@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
+import { getAuthSecret } from '@/lib/auth-secret'
 import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
@@ -56,5 +57,5 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || 'luma-rij-school-dev-secret-2026',
+  secret: getAuthSecret(),
 }

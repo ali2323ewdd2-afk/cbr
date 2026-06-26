@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { prisma } from '@/lib/prisma'
+import { getAuthSecret } from '@/lib/auth-secret'
 
 const PUBLIC_PATHS = [
   '/',
@@ -48,7 +49,7 @@ export async function proxy(req: NextRequest) {
 
   const token = await getToken({
     req,
-    secret: process.env.NEXTAUTH_SECRET || 'luma-rij-school-dev-secret-2026',
+    secret: getAuthSecret(),
   })
 
   // Maintenance mode check (only for non-admins)
