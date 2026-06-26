@@ -43,9 +43,7 @@ ENV WS_PORT=3001
 
 EXPOSE 3001
 
-# The Socket.io server uses path "/", which shadows a plain /health route, so probe the
-# Socket.io handshake endpoint instead — a 200 here confirms the service is actually serving.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -sf "http://localhost:3001/?EIO=4&transport=polling" || exit 1
+  CMD curl -sf http://localhost:3001/health || exit 1
 
 CMD ["npx", "tsx", "mini-services/ws/index.ts"]

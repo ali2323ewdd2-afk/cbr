@@ -3,7 +3,7 @@
  * Real-time notifications via Socket.io + Redis pub/sub.
  *
  * Port: 3001
- * Path: / (Caddy/Nginx forwards /?XTransformPort=3001 from frontend)
+ * Path: /socket.io/ (nginx forwards /socket.io/ from the frontend to this service)
  */
 import { Server } from 'socket.io'
 import { createServer } from 'http'
@@ -24,7 +24,10 @@ const httpServer = createServer((req, res) => {
 
 const io = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
-  path: '/',
+  // Standard Socket.io path; nginx proxies `/socket.io/` to this service and the
+  // browser client (src/lib/realtime.ts) connects on the same path. Using the
+  // default also leaves the plain `/health` HTTP route usable for healthchecks.
+  path: '/socket.io/',
 })
 
 // Redis subscriber
