@@ -347,6 +347,9 @@ async function main() {
     create: { userId: student.id, current: 14, longest: 21, lastActiveAt: new Date() },
   })
 
+  // Idempotent: reset the demo student's seeded XP events so re-seeding does not
+  // keep appending duplicates (and inflating XP) on every deploy.
+  await prisma.xPEvent.deleteMany({ where: { userId: student.id } })
   await prisma.xPEvent.createMany({
     data: [
       { userId: student.id, amount: 90, reason: 'EXAM_PASS' },
@@ -359,18 +362,20 @@ async function main() {
 
   const perfectBadge = await prisma.badge.findUnique({ where: { slug: 'PERFECT' } })
   const sevenDayBadge = await prisma.badge.findUnique({ where: { slug: 'SEVEN_DAY' } })
-  if (perfectBadge) await prisma.userBadge.create({ data: { userId: student.id, badgeId: perfectBadge.id } }).catch(() => {})
-  if (sevenDayBadge) await prisma.userBadge.create({ data: { userId: student.id, badgeId: sevenDayBadge.id } }).catch(() => {})
+  if (perfectBadge) await prisma.userBadge.upsert({ where: { userId_badgeId: { userId: student.id, badgeId: perfectBadge.id } }, update: {}, create: { userId: student.id, badgeId: perfectBadge.id } })
+  if (sevenDayBadge) await prisma.userBadge.upsert({ where: { userId_badgeId: { userId: student.id, badgeId: sevenDayBadge.id } }, update: {}, create: { userId: student.id, badgeId: sevenDayBadge.id } })
 
   const lessonsToComplete = Object.values(lessonRecs).slice(0, 5) as any[]
   for (const lesson of lessonsToComplete) {
-    await prisma.lessonProgress.create({
-      data: { userId: student.id, lessonId: lesson.id, status: 'COMPLETED', watchSec: lesson.durationSec, completedAt: new Date() },
-    }).catch(() => {})
+    await prisma.lessonProgress.upsert({
+      where: { userId_lessonId: { userId: student.id, lessonId: lesson.id } },
+      update: { status: 'COMPLETED', watchSec: lesson.durationSec, completedAt: new Date() },
+      create: { userId: student.id, lessonId: lesson.id, status: 'COMPLETED', watchSec: lesson.durationSec, completedAt: new Date() },
+    })
   }
 
-  await prisma.notification.create({ data: { userId: student.id, type: 'STREAK_WARNING', title: 'Je streak staat op het spel! 🔥', body: 'Je bent al 14 dagen actief. Studie vandaag om je streak te behouden.', link: '/dashboard' } }).catch(() => {})
-  await prisma.notification.create({ data: { userId: student.id, type: 'BADGE', title: 'Nieuwe badge: Perfect 🎯', body: 'Gefeliciteerd! Je hebt een perfect examen gemaakt.', link: '/dashboard' } }).catch(() => {})
+  await prisma.notification.upsert({ where: { id: `seed-notif-streak-${student.id}` }, update: {}, create: { id: `seed-notif-streak-${student.id}`, userId: student.id, type: 'STREAK_WARNING', title: 'Je streak staat op het spel! 🔥', body: 'Je bent al 14 dagen actief. Studie vandaag om je streak te behouden.', link: '/dashboard' } })
+  await prisma.notification.upsert({ where: { id: `seed-notif-badge-${student.id}` }, update: {}, create: { id: `seed-notif-badge-${student.id}`, userId: student.id, type: 'BADGE', title: 'Nieuwe badge: Perfect 🎯', body: 'Gefeliciteerd! Je hebt een perfect examen gemaakt.', link: '/dashboard' } })
 
   console.log('  ✓ demo student:', student.email)
 
